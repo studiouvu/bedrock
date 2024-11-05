@@ -1,6 +1,6 @@
 ﻿@using Bedrock.Views
 @{
-    ViewData["Title"] = "お久しぶりです。 - Bedrock";
+ViewData["Title"] = "初めまして! - Bedrock";
 }
 <div class="text-left" style="width: 100%;">
     <div class="hide-on-small">
@@ -17,19 +17,15 @@
             </div>
             <div id="projectContent" style="overflow-wrap: break-word;">
                 <div
-                    style="cursor: pointer; margin-left: auto; margin-right: auto; background-color: #1f1f1f; border-radius: 10px; padding: 4px;">
-                    お久しぶりです。
+                    style="cursor: pointer; margin-left: auto; margin-right: auto; background-color: #1f1f1f; border-radius: 10px; padding: 4px 8px;">
+                    初めまして!
                 </div>
                 <div
                     style="cursor: pointer; margin-left: auto; margin-right: auto; background-color: transparent; border-radius: 10px; padding: 4px;">
-                    냉장고에 코끼리를 넣는 아이디어
+                    냉장고에 코끼리를 넣는 방법
                 </div>
                 <div
-                    style="cursor: pointer; margin-left: auto; margin-right: auto; background-color: transparent; border-radius: 10px; padding: 4px;">
-                    합동 프로젝트
-                </div>
-                <div
-                    style="float:left; cursor: pointer; width: 128px; margin-left: auto; margin-right: auto; background-color: #1f1f1f; border-radius: 10px; padding: 4px;">
+                    style="float:left; cursor: pointer; width: 128px; margin-left: auto; margin-right: auto; background-color: #1f1f1f; border-radius: 10px; padding: 4px 8px;">
                     <div class="text-center">+</div>
                 </div>
             </div>
@@ -41,7 +37,7 @@
 
             <font color="#919191">
                 <div style="border: none; outline: none; padding-bottom: 10px; display: flex; margin-bottom: 15px">
-                    <div style="width: 28px; height: 100%; padding: 6px; border-radius: 10px; margin-right: 6px;">
+                    <div class="hide-on-small" style="width: 28px; height: 100%; padding: 6px; border-radius: 10px; margin-right: 6px;">
                         <div class="text-center">
                             🎏
                         </div>
@@ -49,39 +45,15 @@
                     <div class="scroll-hoizontal"
                          style="height: 100%; border: none; outline: none; display: flex; overflow: scroll;  white-space: nowrap;">
                         <div
-                            style="cursor: pointer; width: 140px; height: 100%; background-color: #1f1f1f; padding: 6px; border-radius: 10px; margin-right: 6px;">
+                            style="cursor: pointer; height: 100%; background-color: #1f1f1f; padding: 6px 9px; border-radius: 10px; margin-right: 6px;">
                             <div class="text-center">
-                                お久しぶりです。
+                                初めまして!
                             </div>
                         </div>
                         <div
-                            style="cursor: pointer; width: 150px; height: 100%; background-color: #1f1f1f; padding: 6px; border-radius: 10px; margin-right: 6px;">
+                            style="cursor: pointer; height: 100%; background-color: #1f1f1f; padding: 6px 9px; border-radius: 10px; margin-right: 6px;">
                             <div class="text-center">
                                 냉장고에 코끼리를..
-                            </div>
-                        </div>
-                        <div
-                            style="cursor: pointer; width: 120px; height: 100%; background-color: #1f1f1f; padding: 6px; border-radius: 10px; margin-right: 6px;">
-                            <div class="text-center">
-                                프로젝트1
-                            </div>
-                        </div>
-                        <div
-                            style="cursor: pointer; width: 120px; height: 100%; background-color: #1f1f1f; padding: 6px; border-radius: 10px; margin-right: 6px;">
-                            <div class="text-center">
-                                프로젝트2
-                            </div>
-                        </div>
-                        <div
-                            style="cursor: pointer; width: 120px; height: 100%; background-color: #1f1f1f; padding: 6px; border-radius: 10px; margin-right: 6px;">
-                            <div class="text-center">
-                                프로젝트3
-                            </div>
-                        </div>
-                        <div
-                            style="cursor: pointer; width: 120px; height: 100%; background-color: #1f1f1f; padding: 6px; border-radius: 10px; margin-right: 6px;">
-                            <div class="text-center">
-                                프로젝트4
                             </div>
                         </div>
                     </div>
@@ -92,22 +64,23 @@
                 <div contenteditable="true" style="border: none; outline: none;">
                     <h1>
                         <b>
-                            お久しぶりです。
+                            初めまして!
+                            @* お久しぶりです。 *@
                         </b>
                     </h1>
                 </div>
                 <div style="border: none; outline: none; padding-bottom: 10px; display: flex;">
                     <div
-                        style="cursor: pointer; width: 100px; height: 100%; background-color: #1f1f1f; padding: 4px; border-radius: 10px;">
+                        style="cursor: pointer; height: 100%; background-color: #1f1f1f; padding: 4px 9px; border-radius: 10px;">
                         <div class="text-center">
                             <font color="#919191">
-                                ✔️258/491
+                                ✔️0/5
                             </font>
                         </div>
                     </div>
                 </div>
                 <div
-                    style="max-width: 100%; margin-left: auto; margin-right: auto; background-color: #1f1f1f; padding: 15px; border-radius: 10px;">
+                    style="max-width: 100%; margin-left: auto; margin-right: auto; background-color: #1f1f1f; padding: 15px;border-radius: 10px;">
                     <div id="tblContent" style="max-width: 100%;  overflow-wrap: break-word;">
                     </div>
                     <div style="min-height: 5px;">
@@ -130,7 +103,7 @@
 
 @section Scripts
 {
-    <script type="text/javascript">
+<script type="text/javascript">
     $(function () {
         $.ajax({
             type: "POST",
