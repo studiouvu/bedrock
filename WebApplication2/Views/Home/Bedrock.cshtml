@@ -1,0 +1,130 @@
+﻿@using WebApplication2.Views
+@{
+    ViewData["Title"] = "お久しぶりです。 - bedrock";
+}
+<div class="text-left" style="display: flex;">
+    <div class="hide-on-small">
+        <div id="floating"
+             style="
+         position: fixed;
+         left : 20px;
+         top : 100px;
+         width: 300px;
+         height: 600px; margin-left: auto; margin-right: auto; ">
+
+            <div id="projectContent" style="overflow-wrap: break-word;">
+                <div
+                    style="cursor: pointer; margin-left: auto; margin-right: auto; background-color: #1f1f1f; border-radius: 10px; padding: 8px;">
+                    お久しぶりです。
+                </div>
+                <div
+                    style="cursor: pointer; margin-left: auto; margin-right: auto; background-color: transparent; border-radius: 10px; padding: 8px;">
+                    냉장고에 코끼리를 넣는 아이디어
+                </div>
+                <div
+                    style="cursor: pointer; margin-left: auto; margin-right: auto; background-color: transparent; border-radius: 10px; padding: 8px;">
+                    합동 프로젝트
+                </div>
+                <div
+                    style="float:left; cursor: pointer; width: 128px; margin-left: auto; margin-right: auto; background-color: #1f1f1f; border-radius: 10px; padding: 4px;">
+                    <div class="text-center">+</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="container" style="padding-top: 5px">
+        <div
+            style="width: 100%; max-width: 600px; margin-left: auto; margin-right: auto; border-radius: 10px;">
+            <div style="width: 100%; height: 100%; padding: 15px;">
+                <div contenteditable="true" style="border: none; outline: none;">
+                    <h1>
+                        <b>
+                            お久しぶりです。
+                        </b>
+                    </h1>
+                </div>
+                <div style="max-width: 100%; margin-left: auto; margin-right: auto; background-color: #1f1f1f; padding: 15px; border-radius: 10px;">
+                    <div id="tblContent" style="max-width: 100%;  overflow-wrap: break-word;">
+                    </div>
+                    <div style="min-height: 5px;">
+                    </div>
+                    <div style="max-width: 100%; display: flex; align-items: center;">
+                        <div onclick="Hello()"
+                             style="cursor: pointer; width: 18px; height: 18px; border: solid #cdd0d4;  border-width:1px; margin-right: 4px; border-radius: 5px;">
+                        </div>
+                        <div class="input-box" style="width: 100%; overflow-wrap: break-word;">
+                            <div style="width: 100%; height: 100%; margin-left: 10px; margin-right: 10px;">
+                                <input id="input1" type="text" placeholder="> ..."/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+{
+    <script type="text/javascript">
+    $(function () {
+        $.ajax({
+            type: "POST",
+            url: '@Url.Action("ReceiveContent")',
+            contentType: "application/json; charset=utf-8",
+            success: function (data) {
+                $('#tblContent').html(data);
+            },
+            error: function (data) {
+                $('#tblContent').html("fail");
+            }
+        });
+
+        document.addEventListener('keydown', function (event) {
+            var key = event.key || event.keyCode;
+
+            if (key == 'Enter') {
+                SendText();
+            }
+            return false;
+        });
+    });
+
+    function ClickDone(id) {
+        console.log("ClickDone");
+
+        $.ajax({
+            type: "POST",
+            url: '@Url.Action("ClickDone")',
+            data: JSON.stringify({data: id}),
+            dataType: 'text',
+            contentType: "application/json; charset=utf-8",
+            success: function (data) {
+                $('#tblContent').html(data);
+            },
+            error: function (data) {
+                $('#tblContent').html("fail");
+            }
+        });
+    }
+
+    function SendText() {
+        let typped = document.getElementById('input1').value;
+        document.getElementById('input1').value = '';
+
+        $.ajax({
+            type: "POST",
+            url: '@Url.Action("ReceiveText")',
+            data: JSON.stringify({data: typped}),
+            dataType: 'text',
+            contentType: "application/json; charset=utf-8",
+            success: function (data) {
+                $('#tblContent').html(data);
+            },
+            error: function (data) {
+                $('#tblContent').html("fail");
+            }
+        });
+    }
+</script>
+}
