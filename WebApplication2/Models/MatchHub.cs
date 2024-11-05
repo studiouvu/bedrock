@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.SignalR;
-namespace WebApplication2.Models;
+namespace Bedrock.Models;
 
 public class MatchHub : Hub
 {

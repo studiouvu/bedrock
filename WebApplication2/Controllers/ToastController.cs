@@ -8,12 +8,12 @@ using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.DocumentModel;
 using Amazon.DynamoDBv2.Model;
 using Amazon.Runtime;
+using Bedrock.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using WebApplication2.Models;
-using WebApplication2.Views;
+using Bedrock.Views;
 
-namespace WebApplication2.Controllers;
+namespace Bedrock.Controllers;
 
 public class UserData
 {

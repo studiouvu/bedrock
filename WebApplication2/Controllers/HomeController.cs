@@ -6,18 +6,19 @@ using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.DocumentModel;
 using Amazon.DynamoDBv2.Model;
 using Amazon.Runtime;
+using Bedrock.Models;
 using Markdig;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using WebApplication2.Models;
-using WebApplication2.Views;
+using Bedrock.Views;
 
-namespace WebApplication2.Controllers;
+namespace Bedrock.Controllers;
 
 public class KeyInputModel
 {
     public string Data { get; set; }
 }
+
 public class BedrockContent
 {
     public string Partition;
@@ -26,7 +27,10 @@ public class BedrockContent
     public string Text;
     public bool Done;
     public long Tick;
+    public long DoneTick;
+    public long DoneIp;
 }
+
 public class HomeController : Controller
 {
     private readonly ILogger<HomeController> _logger;
@@ -56,15 +60,11 @@ public class HomeController : Controller
         if (string.IsNullOrEmpty(model.Data))
             return await ReceiveContent();
         
-        var result = Markdown.ToHtml(model.Data)
-            .Replace("<p>", "")
-            .Replace("</p>", "");
-
         var value = new BedrockContent()
         {
             Id = Guid.NewGuid().ToString(),
             Partition = "0",
-            Text = result,
+            Text = model.Data,
             Project = "project-0",
             Done = false,
             Tick = DateTime.UtcNow.Ticks,
@@ -79,6 +79,18 @@ public class HomeController : Controller
     public async Task<IActionResult> ClickDone([FromBody] KeyInputModel model)
     {
         var id = model.Data;
+        
+        // id로 아이템 로드
+        var content = await context.LoadAsync<BedrockContent>(id);
+
+        if (content == null)
+            return NotFound("해당 아이템을 찾을 수 없습니다.");
+
+        // 아이템 수정
+        content.Text = newText;
+
+        // 수정된 아이템 저장
+        await context.SaveAsync(content);
 
         var updateItemRequest = new UpdateItemRequest
         {
@@ -139,14 +151,17 @@ public class HomeController : Controller
 
         foreach (var content in contents.OrderBy(content => content.Tick))
         {
+            //todo! 최적화하기 , 클라에서 해당 정보 가지고 있도록
             var text = $"""
                         <div style="max-width: 100%;">
                             <div class="ob-box" style="width=100%; cursor: text; background-color:transparent;">
                                 <div style="width:100%; height:100%; align-items: center;">
-                                 <div style="width:100%; height:100%; display: flex; align-items: center;">
-                                     <div onclick="ClickDone('{content.Id}')" style="cursor: pointer; width: 18px; height: 18px; border: solid #cdd0d4;  border-width:1px; margin-right: 10px; border-radius: 5px;"></div>
+                                 <div style="width:100%; height:100%; display: flex;">
+                                     <div onclick="ClickDone('{content.Id}')" style="cursor: pointer; min-width: 18px; max-width:18px; min-height: 18px; max-height: 18px; border: solid #cdd0d4;  border-width:1px; margin-top: 3px; margin-right: 10px; border-radius: 5px;"></div>
                                          <div contenteditable="true" style="cursor: text; border: none; outline: none;">
                                          {content.Text}
+                                        <br>
+                                        {DateTime.MinValue.AddTicks(content.Tick):MM.dd.yy HH:mm:ss}
                                          </div>
                                      </div>
                                 </div>

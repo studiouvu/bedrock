@@ -1,6 +1,6 @@
-﻿using Microsoft.AspNetCore.SignalR;
-using WebApplication2.Models;
-namespace WebApplication2.Controllers;
+﻿using Bedrock.Models;
+using Microsoft.AspNetCore.SignalR;
+namespace Bedrock.Controllers;
 
 public class MatchmakingService
 {

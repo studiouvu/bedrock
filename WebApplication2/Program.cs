@@ -2,9 +2,7 @@ using Amazon;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DataModel;
 using Amazon.Runtime;
-using WebApplication2;
-using WebApplication2.Controllers;
-using WebApplication2.Models;
+using Bedrock;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -15,6 +13,7 @@ builder.Services.AddRouting(options =>
         options.LowercaseUrls = true;
     }
 );
+
 // 세션 서비스 추가
 builder.Services.AddSession(options =>
 {

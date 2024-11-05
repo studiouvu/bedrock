@@ -1,6 +1,6 @@
 ﻿using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DataModel;
-namespace WebApplication2;
+namespace Bedrock;
 
 public static class AwsKey
 {

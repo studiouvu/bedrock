@@ -436,7 +436,9 @@ body {
 }
 
 .ob-box {
-    height: 36px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    /*height: 36px;*/
     align-items: center;
     /*background: #ecf0f3;*/
     border-radius: 15px;

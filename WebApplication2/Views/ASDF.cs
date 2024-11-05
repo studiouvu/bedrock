@@ -1,5 +1,5 @@
 ﻿using Markdig;
-namespace WebApplication2.Views;
+namespace Bedrock.Views;
 
 public static class ASDF
 {
