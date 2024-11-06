@@ -1,6 +1,6 @@
 ﻿@using Bedrock.Views
 @{
-ViewData["Title"] = "初めまして! - Bedrock";
+    ViewData["Title"] = "初めまして! - Bedrock";
 }
 <div class="text-left" style="width: 100%;">
     <div class="hide-on-small">
@@ -31,13 +31,13 @@ ViewData["Title"] = "初めまして! - Bedrock";
             </div>
         </div>
     </div>
-    <div class="container" style="padding-top: 5px; margin-bottom: 200px;">
+    <div class="container" style="padding-top: 5px; margin-bottom: 200px; min-height: 600px; ">
         <div
             style="width: 100%; max-width: 600px; margin-left: auto; margin-right: auto; border-radius: 10px;">
-
             <font color="#919191">
                 <div style="border: none; outline: none; padding-bottom: 10px; display: flex; margin-bottom: 15px">
-                    <div class="hide-on-small" style="width: 28px; height: 100%; padding: 6px; border-radius: 10px; margin-right: 6px;">
+                    <div class="hide-on-small"
+                         style="width: 28px; height: 100%; padding: 6px; border-radius: 10px; margin-right: 6px;">
                         <div class="text-center">
                             🎏
                         </div>
@@ -89,80 +89,236 @@ ViewData["Title"] = "初めまして! - Bedrock";
                         <div onclick="Hello()"
                              style="cursor: pointer; width: 18px; height: 18px; border: solid #cdd0d4;  border-width:1px; margin-right: 4px; border-radius: 5px;">
                         </div>
-                        <div class="input-box" style="width: 100%; overflow-wrap: break-word;">
+                        <div class="input-box-holder" style="width: 100%; background: #1b1c1c; overflow-wrap: break-word;">
                             <div style="width: 100%; height: 100%; margin-left: 10px; margin-right: 10px;">
-                                <input id="input1" type="text" placeholder="> ..."/>
+                                <input class="input-box" id="input1" type="text" placeholder="> ..." onKeyDown="SendInput(event)"/>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+            @if (ViewBag.Login == false)
+            {
+                <div style="max-width: 400px; margin-top: 80px; margin-left: auto; margin-right: auto; background-color: #044a80; padding: 15px;border-radius: 10px;">
+                    <div class="text-center" style="width: 100%; align-items: center;">
+                        <div id="login-form">
+                            <h7>
+                                로그인 후 데이터를 영구적으로 보관하세요
+                            </h7>
+                            <div style="max-width: 100%; margin-top: 10px; display: flex; align-items: center;">
+                                <div class="input-box-holder" style="width: 100%; background: #092c47; overflow-wrap: break-word;">
+                                    <div style="width: 100%; height: 100%; margin-left: 10px; margin-right: 10px;">
+                                        <input id="mail-input" class="input-box" type="text" placeholder="your-email@@email.com" onKeyDown="SendEmail(event)"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
         </div>
+    </div>
+    <div class="text-center" style="width: 100%;">
+        <font color="#454545">
+            <div id="user-id" style="width: 100%;">
+                user id loading
+            </div>
+            <div style="width: 100%; margin-top: 8px;">
+                <b>Bedrock</b>
+                <br>
+                Copyright @DateTime.UtcNow.Year. Studio uvu. All rights reserved.
+            </div>
+        </font>
     </div>
 </div>
 
 @section Scripts
 {
-<script type="text/javascript">
+    <script type="text/javascript">
     $(function () {
-        $.ajax({
-            type: "POST",
-            url: '@Url.Action("ReceiveContent")',
-            contentType: "application/json; charset=utf-8",
-            success: function (data) {
-                $('#tblContent').html(data);
-            },
-            error: function (data) {
-                $('#tblContent').html("fail");
+        fetch('@Url.Action("ReceiveContent")', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json; charset=utf-8'
             }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('fail to load user id');
+            }
+            return response.text();
+        })
+        .then(data => {
+            $('#tblContent').html(data);
+            ReceiveUserId();
+        })
+        .catch(error => {
+            $('#tblContent').html("fail");
         });
-
+    
         document.addEventListener('keydown', function (event) {
             var key = event.key || event.keyCode;
 
             if (key == 'Enter') {
-                SendText();
             }
             return false;
         });
     });
 
-    function ClickDone(id) {
-        console.log("ClickDone");
-
-        $.ajax({
-            type: "POST",
-            url: '@Url.Action("ClickDone")',
-            data: JSON.stringify({data: id}),
-            dataType: 'text',
-            contentType: "application/json; charset=utf-8",
-            success: function (data) {
-                $('#tblContent').html(data);
-            },
-            error: function (data) {
-                $('#tblContent').html("fail");
+    function ReceiveContent() {
+        fetch('@Url.Action("ReceiveContent")', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json; charset=utf-8'
             }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('fail to load user id');
+            }
+            return response.text();
+        })
+        .then(data => {
+            $('#tblContent').html(data);
+        })
+        .catch(error => {
+            $('#tblContent').html("fail");
         });
     }
 
-    function SendText() {
+    function ReceiveUserId() {
+        fetch('@Url.Action("ReceiveUserId")', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json; charset=utf-8'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('fail to load user id');
+            }
+            return response.text();
+        })
+        .then(data => {
+            $('#user-id').html(data);
+        })
+        .catch(error => {
+            $('#user-id').html("fail to load user id");
+        });
+    }
+
+    function ClickDone(id) {
+        console.log("ClickDone");
+
+        fetch('@Url.Action("ClickDone")', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json; charset=utf-8'
+            },
+            body: JSON.stringify({ data: id })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('네트워크 응답에 문제가 있습니다.');
+            }
+            return response.text();
+        })
+        .then(data => {
+            $('#tblContent').html(data);
+        })
+        .catch(error => {
+            $('#tblContent').html("fail");
+        });
+    }
+
+    function SendInput(event) {
+        var key = event.key || event.keyCode;
+
+        if(key != 'Enter')
+            return;
+    
         let typped = document.getElementById('input1').value;
         document.getElementById('input1').value = '';
 
-        $.ajax({
-            type: "POST",
-            url: '@Url.Action("ReceiveText")',
-            data: JSON.stringify({data: typped}),
-            dataType: 'text',
-            contentType: "application/json; charset=utf-8",
-            success: function (data) {
-                $('#tblContent').html(data);
+        fetch('@Url.Action("ReceiveText")', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json; charset=utf-8'
             },
-            error: function (data) {
-                $('#tblContent').html("fail");
+            body: JSON.stringify({ data: typped })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('네트워크 응답에 문제가 있습니다.');
             }
+            return response.text();
+        })
+        .then(data => {
+            $('#tblContent').html(data);
+        })
+        .catch(error => {
+            $('#tblContent').html("fail");
+        });
+    }
+
+    function SendEmail(event) {
+        var key = event.key || event.keyCode;
+
+        if(key != 'Enter')
+            return;
+    
+        let typped = document.getElementById('mail-input').value;
+        $('#login-form').html("<h5>Sending...</h5>");
+        
+        fetch('@Url.Action("ReceiveEmailId")', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json; charset=utf-8'
+            },
+            body: JSON.stringify({ data: typped })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('네트워크 응답에 문제가 있습니다.');
+            }
+            return response.text();
+        })
+        .then(data => {
+            $('#login-form').html(data);
+        })
+        .catch(error => {
+            $('#tblContent').html("fail");
+        });
+    }
+
+    function SendCode(event) {
+        var key = event.key || event.keyCode;
+
+        if(key != 'Enter')
+            return;
+
+        let typped = document.getElementById('code-input').value;
+        $('#login-form').html("<h5>Sending...</h5>");
+
+        fetch('@Url.Action("ReceiveEmailCode")', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json; charset=utf-8'
+            },
+            body: JSON.stringify({ data: typped })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('네트워크 응답에 문제가 있습니다.');
+            }
+            return response.text();
+        })
+        .then(data => {
+            location.reload(true);
+        })
+        .catch(error => {
+            $('#tblContent').html("fail");
         });
     }
 </script>
 }
-

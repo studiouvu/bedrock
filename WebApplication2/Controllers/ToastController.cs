@@ -29,12 +29,7 @@ public class EmailCode
     public DateTime DateTime;
     public string Partition;
 }
-public class DeviceId
-{
-    public string Id;
-    public string UserId;
-    public string Partition;
-}
+
 public class ToastController : Controller
 {
     private readonly ILogger<ToastController> _logger;
@@ -46,14 +41,14 @@ public class ToastController : Controller
         _hubContext = hubContext;
     }
 
-    public async Task<IActionResult> LoadUserData(string id)
+    public async Task<IActionResult> LoadUserData(string emailId)
     {
         var credentials = new BasicAWSCredentials(AwsKey.accessKey, AwsKey.secretKey);
         var client = new AmazonDynamoDBClient(credentials, RegionEndpoint.APNortheast1);
 
         var context = new DynamoDBContext(client);
 
-        var userId = await GetUserId(id);
+        var userId = await GetUserId(emailId);
 
         var conditions = new List<ScanCondition>
         {
@@ -70,7 +65,7 @@ public class ToastController : Controller
         return Content(result.Content);
     }
 
-    public async Task<string> GetUserId(string id)
+    public async Task<string> GetUserId(string emailId)
     {
         var credentials = new BasicAWSCredentials(AwsKey.accessKey, AwsKey.secretKey);
         var client = new AmazonDynamoDBClient(credentials, RegionEndpoint.APNortheast1);
@@ -79,18 +74,18 @@ public class ToastController : Controller
 
         var conditions = new List<ScanCondition>
         {
-            new("Id", ScanOperator.Equal, id)
+            new("Id", ScanOperator.Equal, emailId)
         };
 
-        var allDocs = await context.ScanAsync<DeviceId>(conditions).GetRemainingAsync();
+        var allDocs = await context.ScanAsync<BedrockDeviceId>(conditions).GetRemainingAsync();
 
         if (allDocs.Count == 0)
         {
             var newUserId = await CreateUserId();
 
-            var deviceId = new DeviceId()
+            var deviceId = new BedrockDeviceId()
             {
-                Id = id,
+                Id = emailId,
                 UserId = newUserId,
                 Partition = "0"
             };
@@ -106,14 +101,14 @@ public class ToastController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> SaveUserData(string id, string data)
+    public async Task<IActionResult> SaveUserData(string emailId, string data)
     {
         var credentials = new BasicAWSCredentials(AwsKey.accessKey, AwsKey.secretKey);
         var client = new AmazonDynamoDBClient(credentials, RegionEndpoint.APNortheast1);
 
         var context = new DynamoDBContext(client);
 
-        var userId = await GetUserId(id);
+        var userId = await GetUserId(emailId);
 
         var userData = new UserData
         {
