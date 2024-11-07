@@ -15,7 +15,7 @@ using Bedrock.Views;
 
 namespace Bedrock.Controllers;
 
-public class KeyInputModel
+public class DataModel
 {
     public string Data { get; set; }
 }
@@ -36,6 +36,7 @@ public class BedrockProject
     public string UserId;
     public string Name;
     public long CreateTick;
+    public long LastOpenTick;
 }
 public class BedrockDeviceId
 {
@@ -99,7 +100,7 @@ public class HomeController : Controller
 
         if (isFrist)
         {
-            var project = await CreateProject("새로운 프로젝트", userId);
+            var project = await CreateProject(userId);
             await FirstSetting(project.Id);
 
             var userSetting = await GetUserSetting(userId);
@@ -114,7 +115,41 @@ public class HomeController : Controller
         return View();
     }
 
-    public async Task<BedrockProject> CreateProject(string name, string userId)
+    [HttpPost]
+    public async Task<bool> ReceiveCreateProject()
+    {
+        var deviceId = GetDeviceId();
+        var userId = await GetUserId(deviceId);
+        var newProject = await CreateProject(userId);
+
+        var userSetting = await GetUserSetting(userId);
+        userSetting.CurrentProject = newProject.Id;
+
+        await SaveUserSetting(userSetting);
+
+        return true;
+    }
+
+    [HttpPost]
+    public async Task<bool> ReceiveChangeProject([FromBody] DataModel data)
+    {
+        var deviceId = GetDeviceId();
+        var userId = await GetUserId(deviceId);
+        var userSetting = await GetUserSetting(userId);
+
+        var projectId = data.Data;
+        userSetting.CurrentProject = projectId;
+
+        await SaveUserSetting(userSetting);
+
+        var project = await GetProject(projectId);
+        project.LastOpenTick = DateTime.UtcNow.Ticks;
+        await SaveProject(project);
+
+        return true;
+    }
+
+    public async Task<BedrockProject> CreateProject(string userId)
     {
         var projectId = Guid.NewGuid().ToString();
 
@@ -123,8 +158,9 @@ public class HomeController : Controller
             Id = projectId,
             UserId = userId,
             Partition = "0",
-            Name = name,
+            Name = $"새로운 프로젝트-{projectId.Substring(0, 3)}",
             CreateTick = DateTime.UtcNow.Ticks,
+            LastOpenTick = DateTime.UtcNow.Ticks,
         };
 
         await AwsKey.Context.SaveAsync(project);
@@ -136,6 +172,12 @@ public class HomeController : Controller
     {
         var project = await AwsKey.Context.LoadAsync<BedrockProject>("0", projectId);
         return project;
+    }
+
+    public async Task<bool> SaveProject(BedrockProject project)
+    {
+        await AwsKey.Context.SaveAsync(project);
+        return true;
     }
 
     [HttpPost]
@@ -153,20 +195,88 @@ public class HomeController : Controller
         var deviceId = GetDeviceId();
         var userId = await GetUserId(deviceId);
         var userSetting = await GetUserSetting(userId);
-        
+
         var bedrockProject = await GetProject(userSetting.CurrentProject);
-        
+
         return bedrockProject.Name;
+    }
+
+    [HttpPost]
+    public async Task<string> ReceiveLastProjectList()
+    {
+        var deviceId = GetDeviceId();
+        var userId = await GetUserId(deviceId);
+        var projects = await ReceiveProjects(userId);
+
+        var builder = new StringBuilder();
+
+        foreach (var project in projects.OrderByDescending(project => project.LastOpenTick))
+        {
+            var text = $"""
+                            <div
+                            class="click-color unselectable"
+                            onclick="ChangeProject('{project.Id}')"
+                            style="cursor: pointer; height: 100%; background-color: #1f1f1f; padding: 6px 9px; border-radius: 10px; margin-right: 6px;">
+                                  <div class="text-center">
+                                      {project.Name}
+                                  </div>
+                            </div>
+                        """;
+            builder.Append(text);
+        }
+
+        return builder.ToString();
+    }
+
+    [HttpPost]
+    public async Task<string> ReceiveProjectList()
+    {
+        var deviceId = GetDeviceId();
+        var userId = await GetUserId(deviceId);
+        var userSetting = await GetUserSetting(userId);
+        var projects = await ReceiveProjects(userId);
+
+        var builder = new StringBuilder();
+
+        foreach (var project in projects.OrderByDescending(project => project.CreateTick))
+        {
+            var backgroundColor = project.Id == userSetting.CurrentProject ? "#1f1f1f" : "transparent";
+            
+            var text = $"""
+                            <div
+                                class="click-color unselectable"
+                               onclick="ChangeProject('{project.Id}')"
+                               style="max-width:100%; display: inline-block; cursor: pointer; background-color: {backgroundColor}; border-radius: 10px; padding: 4px 8px;">
+                               {project.Name}
+                            </div>
+                            <br>
+                        """;
+            builder.Append(text);
+        }
+
+        return builder.ToString();
+    }
+    public async Task<List<BedrockProject>> ReceiveProjects(string userId)
+    {
+        var conditions = new List<ScanCondition>
+        {
+            new("Partition", ScanOperator.Equal, "0"),
+            new("UserId", ScanOperator.Equal, userId)
+        };
+
+        var bedrockProjects = await AwsKey.Context.ScanAsync<BedrockProject>(conditions).GetRemainingAsync();
+
+        return bedrockProjects.ToList();
     }
 
     public string GetDeviceId()
     {
         var deviceId = HttpContext.Request.Cookies["deviceId"];
         var version = HttpContext.Request.Cookies["version"];
-        
+
         if (version != "0.1")
             return "";
-        
+
         return deviceId ?? "";
     }
 
@@ -243,7 +353,7 @@ public class HomeController : Controller
     }
 
     [HttpPost]
-    public async Task<string> ReceiveEmailId([FromBody] KeyInputModel model)
+    public async Task<string> ReceiveEmailId([FromBody] DataModel model)
     {
         var emailId = model.Data;
         HttpContext.Response.Cookies.Append("emailId", emailId);
@@ -270,7 +380,7 @@ public class HomeController : Controller
     }
 
     [HttpPost]
-    public async Task<bool> ReceiveEmailCode([FromBody] KeyInputModel model)
+    public async Task<bool> ReceiveEmailCode([FromBody] DataModel model)
     {
         var emailId = HttpContext.Request.Cookies["emailId"];
         var code = model.Data;
@@ -370,7 +480,7 @@ public class HomeController : Controller
     }
 
     [HttpPost]
-    public async Task<string> ReceiveText([FromBody] KeyInputModel model)
+    public async Task<string> ReceiveText([FromBody] DataModel model)
     {
         if (string.IsNullOrEmpty(model.Data))
             return string.Empty;
@@ -444,7 +554,7 @@ public class HomeController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> ClickDone([FromBody] KeyInputModel model)
+    public async Task<IActionResult> ClickDone([FromBody] DataModel model)
     {
         var id = model.Data;
 

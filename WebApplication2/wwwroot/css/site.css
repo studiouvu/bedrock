@@ -472,8 +472,22 @@ body {
     background-color: #363636;
 }
 
+.click-color {
+    transition: background-color 0.3s ease;
+}
+
+.click-color:active {
+    animation: darken 0.3s forwards;
+}
+
+@keyframes darken {
+    to {
+        background-color: rgba(25, 25, 25, 1);
+    }
+}
+
 .click-animate {
-    transition: transform 0.1s ease;
+    transition: transform 0.1s ease-in-out;
 }
 
 .click-animate:active {

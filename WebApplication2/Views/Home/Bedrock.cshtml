@@ -13,25 +13,23 @@
          height: 100%;
           margin-left: auto; margin-right: auto; ">
             <div style="margin-bottom: 50px; margin-top: 20px;">
-                <img 
+                <img
                     onclick="PageReload()"
-                    class="click-animate unselectable" 
-                    src="~/images/bedrock-icon.png" 
+                    class="click-animate unselectable"
+                    src="~/images/bedrock-icon.png"
                     style="cursor: pointer; height:26px;">
             </div>
-            <div id="projectContent" style="overflow-wrap: break-word;">
+            <div id="project-list" style="width: 100%; overflow-wrap: break-word;">
                 <div
-                    style="cursor: pointer; margin-left: auto; margin-right: auto; background-color: #1f1f1f; border-radius: 10px; padding: 4px 8px;">
-                    New Project
+                    style="cursor: pointer; margin: 0px; background-color: #1f1f1f; border-radius: 10px; padding: 4px 8px;">
+                    -
                 </div>
-                <div
-                    style="cursor: pointer; margin-left: auto; margin-right: auto; background-color: transparent; border-radius: 10px; padding: 4px;">
-                    냉장고에 코끼리를 넣는 방법
-                </div>
-                <div
-                    style="float:left; cursor: pointer; width: 128px; margin-left: auto; margin-right: auto; background-color: #1f1f1f; border-radius: 10px; padding: 4px 8px;">
-                    <div class="text-center">+</div>
-                </div>
+            </div>
+            <div
+                onclick="CreateNewProject()"
+                class="click-color unselectable"
+                style="float:left; cursor: pointer; width: 128px; margin-left: auto; margin-right: auto; margin-top: 10px; background-color: #1f1f1f; border-radius: 10px; padding: 4px 8px;">
+                <div class="text-center">+</div>
             </div>
         </div>
     </div>
@@ -46,18 +44,14 @@
                             🎏
                         </div>
                     </div>
-                    <div class="scroll-hoizontal"
-                         style="height: 100%; border: none; outline: none; display: flex; overflow: scroll;  white-space: nowrap;">
+                    <div
+                        id="last-projects"
+                        class="scroll-hoizontal"
+                        style="height: 100%; border: none; outline: none; display: flex; overflow: scroll;  white-space: nowrap;">
                         <div
                             style="cursor: pointer; height: 100%; background-color: #1f1f1f; padding: 6px 9px; border-radius: 10px; margin-right: 6px;">
                             <div class="text-center">
-                                New Project
-                            </div>
-                        </div>
-                        <div
-                            style="cursor: pointer; height: 100%; background-color: #1f1f1f; padding: 6px 9px; border-radius: 10px; margin-right: 6px;">
-                            <div class="text-center">
-                                냉장고에 코끼리를..
+                                --
                             </div>
                         </div>
                     </div>
@@ -76,7 +70,7 @@
                     <div
                         class="click-animate unselectable"
                         style="cursor: pointer; height: 100%; background-color: #1f1f1f; padding: 4px 6px; border-radius: 10px;">
-                        <div 
+                        <div
                             class="text-center">
                             <font color="#919191" style="display: flex;">
                                 ✔️
@@ -164,7 +158,7 @@
         ReceiveFullContent();
         ReceiveUserId();
         GetTaskCount();
-
+        
         /*const myDivs = document.querySelectorAll('.click-animate');
 
         myDivs.forEach((div) => {
@@ -176,7 +170,9 @@
 
     function ReceiveFullContent() {
         ReceiveProjectName();
-    
+        GetProjectList();
+        GetLastProjects();
+        
         fetch('@Url.Action("ReceiveFullContent")', {
             method: 'POST',
             headers: {
@@ -370,7 +366,7 @@
         .catch(error => {
             $('#tblContent').html("fail");
         });
-}
+    }
 
     function GetTaskCount() {
         fetch('@Url.Action("ReceiveTaskCount")', {
@@ -390,6 +386,89 @@
             .catch(error => {
                 $('#tblContent').html("fail");
         });
+    }
+
+    function GetLastProjects() {
+        fetch('@Url.Action("ReceiveLastProjectList")', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json; charset=utf-8'
+            },
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('네트워크 응답에 문제가 있습니다.');
+                }
+                return response.text();
+            }).then(data => {
+            $('#last-projects').html(data);
+        })
+            .catch(error => {
+                $('#last-projects').html("fail");
+            });
+    }
+
+    function GetProjectList() {
+        fetch('@Url.Action("ReceiveProjectList")', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json; charset=utf-8'
+            },
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('네트워크 응답에 문제가 있습니다.');
+                }
+                return response.text();
+            }).then(data => {
+            $('#project-list').html(data);
+        })
+            .catch(error => {
+                $('#project-list').html("fail");
+            });
+    }
+
+    function CreateNewProject() {
+        fetch('@Url.Action("ReceiveCreateProject")', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json; charset=utf-8'
+            },
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('네트워크 응답에 문제가 있습니다.');
+            }
+            return response.text();
+        })
+        .then(data => {
+            ReceiveFullContent();
+        })
+            .catch(error => {
+                $('#last-projects').html("fail");
+            });
+    }
+
+    function ChangeProject(projectId) {
+        fetch('@Url.Action("ReceiveChangeProject")', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json; charset=utf-8'
+            },
+            body: JSON.stringify({ data: projectId })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('네트워크 응답에 문제가 있습니다.');
+                }
+                return response.text();
+            })
+            .then(data => {
+                ReceiveFullContent();
+            })
+            .catch(error => {
+                $('#last-projects').html("fail");
+            });
     }
 
     function PageReload() {
