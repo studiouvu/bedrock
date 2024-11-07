@@ -174,7 +174,7 @@
         style="cursor: pointer; background-color: #1f1f1f; max-width: 140px; margin-top: 50px; margin-left: auto; margin-right: auto; padding: 5px; border-radius: 10px;">
         <div class="text-center" style="width: 100%; align-items: center;">
             <font color="#919191">
-                프로젝트 아카이브
+                Project archive
             </font>
         </div>
     </div>
@@ -499,6 +499,8 @@
     }
 
     function ChangeProject(projectId) {
+        $('#tblContent').html("<div style='min-height: 100px; border-radius: 15px; background-color: #1b1c1c'></div>");
+        
         fetch('@Url.Action("ReceiveChangeProject")', {
             method: 'POST',
             headers: {

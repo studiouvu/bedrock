@@ -408,17 +408,16 @@ public class HomeController : Controller
 
         var userId = await GetUserIdToEmail(emailId);
 
-        var cookie = HttpContext.Request.Cookies["deviceId"];
-        var deviceId = cookie ?? "";
+        var deviceId = GetDeviceId();
 
         if (string.IsNullOrEmpty(userId))
         {
-            var userIdToDevice = await GetUserId(deviceId);
+            var userIdByDevice = await GetUserId(deviceId);
 
             var value = new BedrockEmailId()
             {
                 Id = emailId,
-                UserId = userIdToDevice,
+                UserId = userIdByDevice,
                 Partition = "0",
             };
 
@@ -432,6 +431,8 @@ public class HomeController : Controller
                 UserId = userId,
                 Partition = "0",
             };
+
+            LocalDB.UserIdDictionary[deviceId] = userId;
 
             await AwsKey.Context.SaveAsync(value);
         }
@@ -523,9 +524,7 @@ public class HomeController : Controller
         if (string.IsNullOrEmpty(model.Data))
             return string.Empty;
 
-        var cookie = HttpContext.Request.Cookies["deviceId"];
-        var deviceId = cookie ?? "";
-
+        var deviceId = GetDeviceId();
         var userId = await GetUserId(deviceId);
         var userSetting = await GetUserSetting(userId);
 
@@ -538,6 +537,9 @@ public class HomeController : Controller
 
     private async Task<BedrockUserSetting> GetUserSetting(string userId)
     {
+        if (LocalDB.UserSettingDictionary.TryGetValue(userId, out var setting))
+            return setting;
+        
         var userSetting = await AwsKey.Context.LoadAsync<BedrockUserSetting>("0", userId);
 
         if (userSetting == null)
@@ -553,6 +555,8 @@ public class HomeController : Controller
             await AwsKey.Context.SaveAsync(userSetting);
         }
 
+        LocalDB.UserSettingDictionary.TryAdd(userId, userSetting);
+        
         return userSetting;
     }
 
@@ -716,6 +720,9 @@ public class HomeController : Controller
 
     public async Task<string> GetUserId(string id)
     {
+        if (LocalDB.UserIdDictionary.TryGetValue(id, out var userId))
+            return userId;
+        
         var conditions = new List<ScanCondition>
         {
             new("Id", ScanOperator.Equal, id)
@@ -741,7 +748,11 @@ public class HomeController : Controller
 
         var result = allDocs.First();
 
-        return result.UserId;
+        var resultUserId = result.UserId;
+
+        LocalDB.UserIdDictionary[id] = resultUserId;
+
+        return resultUserId;
     }
 
     public async Task<string> GetUserIdToEmail(string id)
