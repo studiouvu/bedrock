@@ -23,6 +23,7 @@ public class BedrockContent
 {
     public string Partition;
     public string Project;
+    public string ParentContent;
     public string Id;
     public string Text;
     public bool Done;
@@ -37,6 +38,8 @@ public class BedrockProject
     public string Name;
     public long CreateTick;
     public long LastOpenTick;
+    public bool IsArchive;
+    public long ArchiveTick;
 }
 public class BedrockDeviceId
 {
@@ -100,11 +103,11 @@ public class HomeController : Controller
 
         if (isFrist)
         {
-            var project = await CreateProject(userId);
-            await FirstSetting(project.Id);
+            var firstProject = await FirstSetting(userId);
 
             var userSetting = await GetUserSetting(userId);
-            userSetting.CurrentProject = project.Id;
+            userSetting.CurrentProject = firstProject;
+            userSetting.ShowDate = true;
             await SaveUserSetting(userSetting);
         }
 
@@ -149,16 +152,19 @@ public class HomeController : Controller
         return true;
     }
 
-    public async Task<BedrockProject> CreateProject(string userId)
+    public async Task<BedrockProject> CreateProject(string userId, string projectName = "")
     {
         var projectId = Guid.NewGuid().ToString();
+
+        if (string.IsNullOrEmpty(projectName))
+            projectName = $"새로운 프로젝트-{projectId.Substring(0, 3)}";
 
         var project = new BedrockProject()
         {
             Id = projectId,
             UserId = userId,
             Partition = "0",
-            Name = $"새로운 프로젝트-{projectId.Substring(0, 3)}",
+            Name = projectName,
             CreateTick = DateTime.UtcNow.Ticks,
             LastOpenTick = DateTime.UtcNow.Ticks,
         };
@@ -241,12 +247,12 @@ public class HomeController : Controller
         foreach (var project in projects.OrderByDescending(project => project.CreateTick))
         {
             var backgroundColor = project.Id == userSetting.CurrentProject ? "#1f1f1f" : "transparent";
-            
+
             var text = $"""
                             <div
                                 class="click-color unselectable"
                                onclick="ChangeProject('{project.Id}')"
-                               style="max-width:100%; display: inline-block; cursor: pointer; background-color: {backgroundColor}; border-radius: 10px; padding: 4px 8px;">
+                               style="width:95%; display: inline-block; cursor: pointer; background-color: {backgroundColor}; border-radius: 10px; padding: 4px 8px;">
                                {project.Name}
                             </div>
                             <br>
@@ -261,7 +267,8 @@ public class HomeController : Controller
         var conditions = new List<ScanCondition>
         {
             new("Partition", ScanOperator.Equal, "0"),
-            new("UserId", ScanOperator.Equal, userId)
+            new("UserId", ScanOperator.Equal, userId),
+            new("IsArchive", ScanOperator.NotEqual, true)
         };
 
         var bedrockProjects = await AwsKey.Context.ScanAsync<BedrockProject>(conditions).GetRemainingAsync();
@@ -365,14 +372,23 @@ public class HomeController : Controller
                              <br>
                              인증 코드를 입력해주세요.
                         </h7>
-                        <div style="max-width: 100%; margin-top: 10px; display: flex; align-items: center;">
-                            <div class="text-center" style="width: 100%">
-                                <div class="input-box-holder" style="max-width: 200px; margin: 0 auto; background: #092c47; overflow-wrap: break-word;">
+                        <div style="max-width: 200px; margin: 0 auto; margin-top: 10px; display: flex; align-items: center;">
+                            <div class="text-center" >
+                                <div class="input-box-holder" style="width: 100%;  background: #092c47; overflow-wrap: break-word;">
                                     <div style="width:100%; height: 100%; margin-left: 10px; margin-right: 10px;">
                                         <input id="code-input" class="input-box" type="text" placeholder="CODE" onKeyDown="SendCode(event)"/>
                                     </div>
                                 </div>
                             </div>
+                            <div
+                                   class="click-color unselectable input-box-holder"
+                                   onclick="SendCodeForce()"
+                                   style="background: #092c47; cursor: pointer; min-width: 42px; min-height: 42px; display: flex; align-items: center;
+                                   padding: 5px; margin-left: 5px; ">
+                                   <div class="text-center" style="width: 100%; align-items: center;">
+                                       →
+                                   </div>
+                               </div>
                         </div>
                     """;
 
@@ -419,6 +435,28 @@ public class HomeController : Controller
 
             await AwsKey.Context.SaveAsync(value);
         }
+
+        return true;
+    }
+
+    [HttpPost]
+    public async Task<bool> ReceiveCurrentProjectArchive()
+    {
+        var deviceId = GetDeviceId();
+        var userId = await GetUserId(deviceId);
+
+        var userSetting = await GetUserSetting(userId);
+
+        var project = await GetProject(userSetting.CurrentProject);
+        project.IsArchive = !project.IsArchive;
+        project.ArchiveTick = DateTime.UtcNow.Ticks;
+        await SaveProject(project);
+
+        var projects = await ReceiveProjects(userId);
+
+        userSetting.CurrentProject = projects.OrderByDescending(p => p.LastOpenTick).FirstOrDefault()?.Id ?? "0";
+
+        await AwsKey.Context.SaveAsync(userSetting);
 
         return true;
     }
@@ -524,14 +562,44 @@ public class HomeController : Controller
         return true;
     }
 
-    public async Task<bool> FirstSetting(string projectId)
+    public async Task<string> FirstSetting(string userId)
     {
-        await WriteContent(projectId, "안녕하세요🥳 새로 오신 것을 환영합니다!");
-        await WriteContent(projectId, "Bedrock은 **강력한** Todo 앱입니다.  \n- **종단 간 암호화**로 완전한 보안  \n*(당신 외에 누구도 이 글을 읽을 수 없습니다)*  \n- **MarkDown** 문법 지원  \n- **완전한 동기화** *웹 , 안드로이드 , 아이폰 어디서든 사용하세요*  \n- **오픈 소스** *(우리는 절대로 죽지 않습니다!)*  \n  \n자세한 건 이 [소개 글](https://bedrock.es/home/about)을 읽어주세요");
-        await WriteContent(projectId, "오늘의 할 일");
-        await WriteContent(projectId, "물고기 밥 주기");
-        await WriteContent(projectId, "로그인하기");
-        return true;
+        var thirdProject = await CreateProject(userId, "Bedrock 아이디어");
+
+        await WriteContent(thirdProject.Id, "device id 쿠키로 구현");
+        await WriteContent(thirdProject.Id, "uuid 4 사용하기");
+        await WriteContent(thirdProject.Id, "로그인 구현하기");
+        await WriteContent(thirdProject.Id, "이메일로 인증하게");
+        await WriteContent(thirdProject.Id, "이메일 발송 구현하기");
+        await WriteContent(thirdProject.Id, "템플릿 프로젝트");
+        await WriteContent(thirdProject.Id, "사고 싶은 것");
+        await WriteContent(thirdProject.Id, "맥미니 넣자");
+        await WriteContent(thirdProject.Id, "Bedrock 아이디어");
+        await WriteContent(thirdProject.Id, "Parent Content 구현하기");
+        await WriteContent(thirdProject.Id, "Content 별로 div 따로 구현하기");
+        await WriteContent(thirdProject.Id, "fetch로 각 content 수정할때 해당 부분만 변경되게");
+        await WriteContent(thirdProject.Id, "체크처리 할때도 개별로 변경되게");
+        await WriteContent(thirdProject.Id, "asp net Response Compression 적용하기");
+        await WriteContent(thirdProject.Id, "프로젝트 폴더 구현하기");
+        await WriteContent(thirdProject.Id, "프로젝트 내 프로젝트 구현?");
+        await WriteContent(thirdProject.Id, "폴더처럼 작동해도 될 듯");
+        await WriteContent(thirdProject.Id, "콘텐츠 수정 기능 구현하기");
+        await WriteContent(thirdProject.Id, "클릭하면 input box로 변경되게");
+
+        var secondProject = await CreateProject(userId, "사고 싶은 것");
+
+        await WriteContent(secondProject.Id, "에어팟 맥스");
+        await WriteContent(secondProject.Id, "맥미니 m4");
+        await WriteContent(secondProject.Id, "삼성 건조기");
+        await WriteContent(secondProject.Id, "로지텍 키보드 mx keys");
+
+        var firstProject = await CreateProject(userId);
+
+        await WriteContent(firstProject.Id, "안녕하세요🥳 새로 오신 것을 환영합니다!");
+        await WriteContent(firstProject.Id, "Bedrock은 가장 강력한 Todo 앱입니다.  \n자세한 건 이 [소개 글](https://bedrock.es/home/about)을 읽어주세요");
+        // await WriteContent(firstProject.Id, "Bedrock은 가장 강력한 Todo 앱입니다.  \n- **종단 간 암호화**로 완전한 보안  \n*(당신 외에 누구도 이 글을 읽을 수 없습니다)*  \n- **MarkDown** 문법 지원  \n- **완전한 동기화** *웹 , 안드로이드 , 아이폰 어디서든 사용하세요*  \n- **오픈 소스** *(우리는 절대로 죽지 않습니다!)*  \n  \n자세한 건 이 [소개 글](https://bedrock.es/home/about)을 읽어주세요");
+
+        return firstProject.Id;
     }
 
     public async Task<BedrockContent> WriteContent(string projectId, string contentText)
@@ -618,7 +686,7 @@ public class HomeController : Controller
         if (showDate)
         {
             var dateText = $"""
-                            <div style="margin-left: auto;">
+                            <div class="click-color unselectable" style="height:100%; border-radius: 5px; cursor: pointer; margin-left: auto; padding-right: 6px; padding-left: 6px;">
                             <font color="#6c6c6c">
                             {(fixedDateTime.Date != DateTime.Now.Date ? $"{fixedDateTime:MM.dd.yy}" : $"{fixedDateTime:HH:mm}")}
                             </font>
