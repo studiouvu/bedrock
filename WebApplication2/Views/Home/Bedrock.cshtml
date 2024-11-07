@@ -1,6 +1,6 @@
 ﻿@using Bedrock.Views
 @{
-    ViewData["Title"] = "初めまして! - Bedrock";
+    ViewData["Title"] = "Bedrock";
 }
 <div class="text-left" style="width: 100%;">
     <div class="hide-on-small">
@@ -13,12 +13,16 @@
          height: 100%;
           margin-left: auto; margin-right: auto; ">
             <div style="margin-bottom: 50px; margin-top: 20px;">
-                <img src="~/images/bedrock-icon.png" height="26">
+                <img 
+                    onclick="PageReload()"
+                    class="click-animate unselectable" 
+                    src="~/images/bedrock-icon.png" 
+                    style="cursor: pointer; height:26px;">
             </div>
             <div id="projectContent" style="overflow-wrap: break-word;">
                 <div
                     style="cursor: pointer; margin-left: auto; margin-right: auto; background-color: #1f1f1f; border-radius: 10px; padding: 4px 8px;">
-                    初めまして!
+                    New Project
                 </div>
                 <div
                     style="cursor: pointer; margin-left: auto; margin-right: auto; background-color: transparent; border-radius: 10px; padding: 4px;">
@@ -47,7 +51,7 @@
                         <div
                             style="cursor: pointer; height: 100%; background-color: #1f1f1f; padding: 6px 9px; border-radius: 10px; margin-right: 6px;">
                             <div class="text-center">
-                                初めまして!
+                                New Project
                             </div>
                         </div>
                         <div
@@ -61,26 +65,31 @@
             </font>
 
             <div style="width: 100%; height: 100%;">
-                <div contenteditable="true" style="border: none; outline: none;">
+                <div style="border: none; outline: none;">
                     <h1>
-                        <b>
-                            初めまして!
-                            @* お久しぶりです。 *@
+                        <b id="project-name">
+                            New Project
                         </b>
                     </h1>
                 </div>
                 <div style="border: none; outline: none; padding-bottom: 10px; display: flex;">
                     <div
-                        style="cursor: pointer; height: 100%; background-color: #1f1f1f; padding: 4px 9px; border-radius: 10px;">
-                        <div class="text-center">
-                            <font color="#919191">
-                                ✔️0/5
+                        class="click-animate unselectable"
+                        style="cursor: pointer; height: 100%; background-color: #1f1f1f; padding: 4px 6px; border-radius: 10px;">
+                        <div 
+                            class="text-center">
+                            <font color="#919191" style="display: flex;">
+                                ✔️
+                                <div id="task-count">
+                                    --/--
+                                </div>
                             </font>
                         </div>
                     </div>
                     <div
+                        class="click-animate unselectable"
                         onclick="ShowDate()"
-                        style="cursor: pointer; height: 100%; background-color: #1f1f1f; padding: 4px 9px; margin-left: auto; border-radius: 10px;">
+                        style="cursor: pointer; height: 100%; background-color: #1f1f1f; padding: 4px 6px; margin-left: auto; border-radius: 10px;">
                         <div class="text-center">
                             <font color="#919191">
                                 🗓️
@@ -95,11 +104,12 @@
                     <div style="min-height: 5px;">
                     </div>
                     <div style="max-width: 100%; display: flex; align-items: center;">
-                        <div 
-                             style="cursor: pointer; width: 18px; height: 18px; border: solid #cdd0d4;  border-width:1px; margin-right: 4px; border-radius: 5px;">
+                        <div
+                            class="click-animate unselectable"
+                            style="cursor: pointer; width: 18px; height: 18px; border: solid #cdd0d4;  border-width:1px; margin-right: 4px; border-radius: 5px;">
                         </div>
                         <div class="input-box-holder" style="width: 100%; background: #1b1c1c; overflow-wrap: break-word;">
-                            <div style="width: 100%; height: 100%; margin-left: 10px; margin-right: 10px;">
+                            <div style="width: 100%; height: 100%; margin-left: 5px; margin-right: 5px;">
                                 <input class="input-box" id="input1" type="text" placeholder="> ..." onKeyDown="SendInput(event)"/>
                             </div>
                         </div>
@@ -112,7 +122,7 @@
                     <div class="text-center" style="width: 100%; align-items: center;">
                         <div id="login-form">
                             <h7>
-                                로그인 후 데이터를 영구적으로 보관하세요
+                                로그인하여 데이터를 안전하게 보관하세요
                             </h7>
                             <div style="max-width: 100%; margin-top: 10px; display: flex; align-items: center;">
                                 <div class="input-box-holder" style="width: 100%; background: #092c47; overflow-wrap: break-word;">
@@ -134,8 +144,6 @@
             </div>
             <div style="width: 100%; margin-top: 8px;">
                 <b>Bedrock</b>
-                <br>
-                Copyright @DateTime.UtcNow.Year. Studio uvu. All rights reserved.
             </div>
         </font>
     </div>
@@ -145,26 +153,6 @@
 {
     <script type="text/javascript">
     $(function () {
-        fetch('@Url.Action("ReceiveFullContent")', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json; charset=utf-8'
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('fail to load user id');
-            }
-            return response.text();
-        })
-        .then(data => {
-            $('#tblContent').html(data);
-            ReceiveUserId();
-        })
-        .catch(error => {
-            $('#tblContent').html("fail");
-        });
-    
         document.addEventListener('keydown', function (event) {
             var key = event.key || event.keyCode;
 
@@ -172,9 +160,23 @@
             }
             return false;
         });
+
+        ReceiveFullContent();
+        ReceiveUserId();
+        GetTaskCount();
+
+        /*const myDivs = document.querySelectorAll('.click-animate');
+
+        myDivs.forEach((div) => {
+            div.addEventListener('click', () => {
+                div.classList.toggle('animate');
+            });
+        });*/
     });
 
     function ReceiveFullContent() {
+        ReceiveProjectName();
+    
         fetch('@Url.Action("ReceiveFullContent")', {
             method: 'POST',
             headers: {
@@ -193,6 +195,8 @@
         .catch(error => {
             $('#tblContent').html("fail");
         });
+
+        GetTaskCount();
     }
 
     function ReceiveUserId() {
@@ -216,6 +220,27 @@
         });
     }
 
+    function ReceiveProjectName() {
+        fetch('@Url.Action("ReceiveCurrentProjectName")', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json; charset=utf-8'
+            }
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('fail to load user id');
+                }
+                return response.text();
+            })
+            .then(data => {
+                $('#project-name').html(data);
+            })
+            .catch(error => {
+                $('#project-name').html("fail");
+            });
+    }
+
     function ClickDone(id) {
         console.log("ClickDone");
 
@@ -234,6 +259,7 @@
         })
         .then(data => {
             $('#tblContent').html(data);
+            GetTaskCount();
         })
         .catch(error => {
             $('#tblContent').html("fail");
@@ -264,6 +290,7 @@
         })
         .then(data => {
             $('#tblContent').append(data);
+            GetTaskCount();
         })
         .catch(error => {
             $('#tblContent').html("fail");
@@ -337,18 +364,37 @@
                 'Content-Type': 'application/json; charset=utf-8'
             },
         })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('네트워크 응답에 문제가 있습니다.');
-                }
-                return response.text();
-            })
-            .then(data => {
-                ReceiveFullContent();
+        .then(data => {
+            ReceiveFullContent();
+        })
+        .catch(error => {
+            $('#tblContent').html("fail");
+        });
+}
+
+    function GetTaskCount() {
+        fetch('@Url.Action("ReceiveTaskCount")', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json; charset=utf-8'
+            },
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('네트워크 응답에 문제가 있습니다.');
+            }
+            return response.text();
+        }).then(data => {
+                $('#task-count').html(data);
             })
             .catch(error => {
                 $('#tblContent').html("fail");
-            });
+        });
     }
+
+    function PageReload() {
+        location.reload(true);
+    }
+    
 </script>
 }

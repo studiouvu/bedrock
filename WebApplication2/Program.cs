@@ -26,11 +26,12 @@ builder.Services.AddSession(options =>
     options.Cookie.Name = ".YourApp.Session";
     options.IdleTimeout = TimeSpan.FromMinutes(20);
     options.Cookie.IsEssential = true; // GDPR 등의 이유로 필요
-    
-    var credentials = new BasicAWSCredentials(AwsKey.accessKey, AwsKey.secretKey);
-    AwsKey.Client = new AmazonDynamoDBClient(credentials, RegionEndpoint.APNortheast1);
-    AwsKey.Context = new DynamoDBContext(AwsKey.Client);
 });
+
+
+var credentials = new BasicAWSCredentials(AwsKey.accessKey, AwsKey.secretKey);
+AwsKey.Client = new AmazonDynamoDBClient(credentials, RegionEndpoint.APNortheast1);
+AwsKey.Context = new DynamoDBContext(AwsKey.Client);
 
 var app = builder.Build();
 
@@ -55,7 +56,7 @@ app.UseResponseCompression();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Bedrock}/{emailId?}");
+    pattern: "{controller=Home}/{action=Bedrock}/{id?}");
 
 app.MapControllers();
 

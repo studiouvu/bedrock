@@ -458,3 +458,35 @@ body {
     outline: none;
     color:#ccc;
 }
+
+/* 스크롤 바 */
+
+::-webkit-scrollbar {
+    width: 12px;
+    display: block;
+}
+::-webkit-scrollbar-track, ::-webkit-scrollbar-button {
+    display: none;
+}
+::-webkit-scrollbar-thumb {
+    background-color: #363636;
+}
+
+.click-animate {
+    transition: transform 0.1s ease;
+}
+
+.click-animate:active {
+    transform: scale(0.85);
+}
+
+.click-animate.animate {
+    transform: rotate(360deg);
+}
+
+.unselectable {
+    -webkit-user-select: none; /* Chrome, Safari, Opera */
+    -moz-user-select: none;    /* Firefox */
+    -ms-user-select: none;     /* Internet Explorer/Edge */
+    user-select: none;         /* 표준 문법 */
+}

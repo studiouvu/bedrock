@@ -34,8 +34,8 @@ public class BedrockProject
     public string Partition;
     public string Id;
     public string UserId;
+    public string Name;
     public long CreateTick;
-    public long DoneTick;
 }
 public class BedrockDeviceId
 {
@@ -91,19 +91,51 @@ public class HomeController : Controller
         {
             deviceId = Guid.NewGuid().ToString();
             HttpContext.Response.Cookies.Append("deviceId", deviceId);
+            HttpContext.Response.Cookies.Append("version", "0.1");
             isFrist = true;
         }
 
         var userId = await GetUserId(deviceId);
 
         if (isFrist)
-            await FirstSetting(userId);
+        {
+            var project = await CreateProject("새로운 프로젝트", userId);
+            await FirstSetting(project.Id);
+
+            var userSetting = await GetUserSetting(userId);
+            userSetting.CurrentProject = project.Id;
+            await SaveUserSetting(userSetting);
+        }
 
         var emailId = await GetEmailId(userId);
 
         ViewBag.Login = string.IsNullOrEmpty(emailId) == false;
 
         return View();
+    }
+
+    public async Task<BedrockProject> CreateProject(string name, string userId)
+    {
+        var projectId = Guid.NewGuid().ToString();
+
+        var project = new BedrockProject()
+        {
+            Id = projectId,
+            UserId = userId,
+            Partition = "0",
+            Name = name,
+            CreateTick = DateTime.UtcNow.Ticks,
+        };
+
+        await AwsKey.Context.SaveAsync(project);
+
+        return project;
+    }
+
+    public async Task<BedrockProject> GetProject(string projectId)
+    {
+        var project = await AwsKey.Context.LoadAsync<BedrockProject>("0", projectId);
+        return project;
     }
 
     [HttpPost]
@@ -115,10 +147,27 @@ public class HomeController : Controller
         return string.IsNullOrEmpty(emailId) ? userId : emailId;
     }
 
+    [HttpPost]
+    public async Task<string> ReceiveCurrentProjectName()
+    {
+        var deviceId = GetDeviceId();
+        var userId = await GetUserId(deviceId);
+        var userSetting = await GetUserSetting(userId);
+        
+        var bedrockProject = await GetProject(userSetting.CurrentProject);
+        
+        return bedrockProject.Name;
+    }
+
     public string GetDeviceId()
     {
-        var cookie = HttpContext.Request.Cookies["deviceId"];
-        return cookie ?? "";
+        var deviceId = HttpContext.Request.Cookies["deviceId"];
+        var version = HttpContext.Request.Cookies["version"];
+        
+        if (version != "0.1")
+            return "";
+        
+        return deviceId ?? "";
     }
 
     public async Task<string> GetEmailId(string userId)
@@ -279,6 +328,27 @@ public class HomeController : Controller
         return true;
     }
 
+    [HttpPost]
+    public async Task<string> ReceiveTaskCount()
+    {
+        var deviceId = GetDeviceId();
+        var userId = await GetUserId(deviceId);
+        var userSetting = await GetUserSetting(userId);
+        var project = userSetting.CurrentProject;
+
+        var conditions = new List<ScanCondition>
+        {
+            new("Project", ScanOperator.Equal, project),
+        };
+
+        var contents = await AwsKey.Context.ScanAsync<BedrockContent>(conditions).GetRemainingAsync();
+
+        var count = contents.Count;
+        var doneCount = contents.Count(content => content.Done);
+
+        return $"{doneCount}/{count}";
+    }
+
     public async Task<bool> VerifyCode(string email, string code)
     {
         code = code.ToUpper();
@@ -309,10 +379,9 @@ public class HomeController : Controller
         var deviceId = cookie ?? "";
 
         var userId = await GetUserId(deviceId);
-
-        var content = await WriteContent(userId, model.Data); // 프로젝트 아이디 가져오기 "project-0"
-
         var userSetting = await GetUserSetting(userId);
+
+        var content = await WriteContent(userSetting.CurrentProject, model.Data);
 
         var html = ContentToHtml(content, userSetting.ShowDate);
 
@@ -339,19 +408,26 @@ public class HomeController : Controller
         return userSetting;
     }
 
-    public async Task<bool> FirstSetting(string userId)
+    private async Task<bool> SaveUserSetting(BedrockUserSetting userSetting)
     {
-        // 프로젝트 아이디 가져오기 "project-0"
-        await WriteContent(userId, "안녕하세요🥳 새로 오신 것을 환영합니다!");
-        await WriteContent(userId, "Bedrock은 **강력한** Todo 앱입니다.  \n- **종단 간 암호화**로 완전한 보안  \n*(당신 외에 누구도 이 글을 읽을 수 없습니다)*  \n- **MarkDown** 문법 지원  \n- **완전한 동기화** *웹 , 안드로이드 , 아이폰 어디서든 사용하세요*  \n- **오픈 소스** *(우리는 절대로 죽지 않습니다!)*  \n  \n자세한 건 이 [소개 글](https://bedrock.es/home/about)을 읽어주세요");
-        await WriteContent(userId, "오늘의 할 일");
-        await WriteContent(userId, "물고기 밥 주기");
-        await WriteContent(userId, "로그인하기");
+        await AwsKey.Context.SaveAsync(userSetting);
+        return true;
+    }
+
+    public async Task<bool> FirstSetting(string projectId)
+    {
+        await WriteContent(projectId, "안녕하세요🥳 새로 오신 것을 환영합니다!");
+        await WriteContent(projectId, "Bedrock은 **강력한** Todo 앱입니다.  \n- **종단 간 암호화**로 완전한 보안  \n*(당신 외에 누구도 이 글을 읽을 수 없습니다)*  \n- **MarkDown** 문법 지원  \n- **완전한 동기화** *웹 , 안드로이드 , 아이폰 어디서든 사용하세요*  \n- **오픈 소스** *(우리는 절대로 죽지 않습니다!)*  \n  \n자세한 건 이 [소개 글](https://bedrock.es/home/about)을 읽어주세요");
+        await WriteContent(projectId, "오늘의 할 일");
+        await WriteContent(projectId, "물고기 밥 주기");
+        await WriteContent(projectId, "로그인하기");
         return true;
     }
 
     public async Task<BedrockContent> WriteContent(string projectId, string contentText)
     {
+        contentText = contentText.Replace("<br>", "  \n");
+
         var value = new BedrockContent()
         {
             Id = Guid.NewGuid().ToString(),
@@ -390,12 +466,13 @@ public class HomeController : Controller
     {
         var deviceId = GetDeviceId();
         var userId = await GetUserId(deviceId);
+        var userSetting = await GetUserSetting(userId);
 
-        // 프로젝트 아이디 가져오기 "project-0"
+        var project = userSetting.CurrentProject;
 
         var conditions = new List<ScanCondition>
         {
-            new("Project", ScanOperator.Equal, userId),
+            new("Project", ScanOperator.Equal, project),
             new("Done", ScanOperator.Equal, false),
         };
 
@@ -403,8 +480,6 @@ public class HomeController : Controller
 
         if (contents.Count == 0)
             return Content("");
-
-        var userSetting = await GetUserSetting(userId);
 
         StringBuilder builder = new();
 
@@ -428,26 +503,28 @@ public class HomeController : Controller
 
         var resultContent = new StringBuilder();
 
+        resultContent.Append($"<div >{contentText}</div>");
+
         if (showDate)
         {
             var dateText = $"""
+                            <div style="margin-left: auto;">
                             <font color="#6c6c6c">
                             {(fixedDateTime.Date != DateTime.Now.Date ? $"{fixedDateTime:MM.dd.yy}" : $"{fixedDateTime:HH:mm}")}
                             </font>
+                            </div>
                             """;
 
             resultContent.Append(dateText);
         }
 
-        resultContent.Append(contentText);
-
         var text = $"""
                     <div style="max-width: 100%;">
-                        <div class="ob-box" style="width=100%; cursor: text; background-color:transparent;">
+                        <div class="ob-box" onclick='' style="width=100%; cursor: text; background-color:transparent;">
                             <div style="width:100%; height:100%; align-items: center;">
                              <div style="width:100%; height:100%; display: flex;">
-                                 <div onclick="ClickDone('{content.Id}')" style="cursor: pointer; min-width: 18px; max-width:18px; min-height: 18px; max-height: 18px; border: solid #cdd0d4;  border-width:1px; margin-top: 3px; margin-right: 10px; border-radius: 5px;"></div>
-                                     <div contenteditable="true" style="width:100%; cursor: text; border: none; outline: none;">
+                                 <div class="click-animate unselectable" onclick="ClickDone('{content.Id}')" style="cursor: pointer; min-width: 18px; max-width:18px; min-height: 18px; max-height: 18px; border: solid #cdd0d4;  border-width:1px; margin-top: 3px; margin-right: 10px; border-radius: 5px;"></div>
+                                     <div style="display: flex; width:100%; border: none; outline: none;">
                                      {resultContent}
                                      </div>
                                  </div>
@@ -459,11 +536,11 @@ public class HomeController : Controller
         return text;
     }
 
-    public async Task<string> GetUserId(string emailId)
+    public async Task<string> GetUserId(string id)
     {
         var conditions = new List<ScanCondition>
         {
-            new("Id", ScanOperator.Equal, emailId)
+            new("Id", ScanOperator.Equal, id)
         };
 
         var allDocs = await AwsKey.Context.ScanAsync<BedrockDeviceId>(conditions).GetRemainingAsync();
@@ -474,7 +551,7 @@ public class HomeController : Controller
 
             var deviceId = new BedrockDeviceId()
             {
-                Id = emailId,
+                Id = id,
                 UserId = newUserId,
                 Partition = "0"
             };
@@ -489,11 +566,11 @@ public class HomeController : Controller
         return result.UserId;
     }
 
-    public async Task<string> GetUserIdToEmail(string emailId)
+    public async Task<string> GetUserIdToEmail(string id)
     {
         var conditions = new List<ScanCondition>
         {
-            new("Id", ScanOperator.Equal, emailId)
+            new("Id", ScanOperator.Equal, id)
         };
 
         var allDocs = await AwsKey.Context.ScanAsync<BedrockEmailId>(conditions).GetRemainingAsync();
