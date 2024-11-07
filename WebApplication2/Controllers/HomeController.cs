@@ -49,6 +49,20 @@ public class BedrockEmailId
     public string UserId;
     public string Partition;
 }
+public class EmailCode
+{
+    public string Email;
+    public string Code;
+    public DateTime DateTime;
+    public string Partition;
+}
+public class BedrockUserSetting
+{
+    public string UserId;
+    public string Partition;
+    public bool ShowDate;
+    public string CurrentProject;
+}
 public class HomeController : Controller
 {
     private readonly ILogger<HomeController> _logger;
@@ -129,8 +143,7 @@ public class HomeController : Controller
         var from = "\"Bedrock Team\" <app@studiouvu.com>";
         var message = new MailMessage(from, to);
 
-        var randomCode = new Random();
-        var code = randomCode.Next(1000, 9999);
+        var code = GenerateRandomCode(4);
 
         var mailbody = $"<div style='padding: 20px;'><img src=\"https://bedrock.es/images/bedrock.png\"/><p>아래의 코드를 입력해주세요.</p><h1>{code}</h1></div>";
         message.Subject = "Bedrock 연동 인증 코드";
@@ -166,30 +179,44 @@ public class HomeController : Controller
         return true;
     }
 
+    private static string GenerateRandomCode(int length)
+    {
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        Random random = new Random();
+        char[] codeChars = new char[length];
+
+        for (int i = 0; i < length; i++)
+        {
+            codeChars[i] = chars[random.Next(chars.Length)];
+        }
+
+        return new string(codeChars);
+    }
+
     [HttpPost]
     public async Task<string> ReceiveEmailId([FromBody] KeyInputModel model)
     {
         var emailId = model.Data;
         HttpContext.Response.Cookies.Append("emailId", emailId);
         await SendMail(emailId);
-        
+
         var html = $"""
-                    <h7>
-                         {emailId}로 전송된
-                         <br>
-                         인증 코드를 입력해주세요.
-                    </h7>
-                    <div style="max-width: 100%; margin-top: 10px; display: flex; align-items: center;">
-                        <div class="text-center" style="width: 100%">
-                            <div class="input-box-holder" style="max-width: 200px; margin: 0 auto; background: #092c47; overflow-wrap: break-word;">
-                                <div style="width:100%; height: 100%; margin-left: 10px; margin-right: 10px;">
-                                    <input id="code-input" class="input-box" type="text" placeholder="CODE" onKeyDown="SendCode(event)"/>
+                        <h7>
+                             {emailId}로 전송된
+                             <br>
+                             인증 코드를 입력해주세요.
+                        </h7>
+                        <div style="max-width: 100%; margin-top: 10px; display: flex; align-items: center;">
+                            <div class="text-center" style="width: 100%">
+                                <div class="input-box-holder" style="max-width: 200px; margin: 0 auto; background: #092c47; overflow-wrap: break-word;">
+                                    <div style="width:100%; height: 100%; margin-left: 10px; margin-right: 10px;">
+                                        <input id="code-input" class="input-box" type="text" placeholder="CODE" onKeyDown="SendCode(event)"/>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                """;
-        
+                    """;
+
         return html;
     }
 
@@ -198,12 +225,12 @@ public class HomeController : Controller
     {
         var emailId = HttpContext.Request.Cookies["emailId"];
         var code = model.Data;
-        
-        var verify = await VerifyCode(emailId, int.Parse(code));
+
+        var verify = await VerifyCode(emailId, code);
 
         if (verify == false)
             return false;
-        
+
         var userId = await GetUserIdToEmail(emailId);
 
         var cookie = HttpContext.Request.Cookies["deviceId"];
@@ -237,12 +264,24 @@ public class HomeController : Controller
         return true;
     }
 
-    public async Task<bool> VerifyCode(string email, int code)
+    [HttpPost]
+    public async Task<bool> ReceiveShowDate()
     {
-        var credentials = new BasicAWSCredentials(AwsKey.accessKey, AwsKey.secretKey);
-        var client = new AmazonDynamoDBClient(credentials, RegionEndpoint.APNortheast1);
+        var deviceId = GetDeviceId();
+        var userId = await GetUserId(deviceId);
 
-        var context = new DynamoDBContext(client);
+        var userSetting = await GetUserSetting(userId);
+
+        userSetting.ShowDate = !userSetting.ShowDate;
+
+        await AwsKey.Context.SaveAsync(userSetting);
+
+        return true;
+    }
+
+    public async Task<bool> VerifyCode(string email, string code)
+    {
+        code = code.ToUpper();
 
         var conditions = new List<ScanCondition>
         {
@@ -250,7 +289,7 @@ public class HomeController : Controller
             new("Email", ScanOperator.Equal, email)
         };
 
-        var allDocs = await context.ScanAsync<EmailCode>(conditions).GetRemainingAsync();
+        var allDocs = await AwsKey.Context.ScanAsync<EmailCode>(conditions).GetRemainingAsync();
 
         if (allDocs.Count == 0)
             return false;
@@ -261,29 +300,43 @@ public class HomeController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> ReceiveText([FromBody] KeyInputModel model)
+    public async Task<string> ReceiveText([FromBody] KeyInputModel model)
     {
         if (string.IsNullOrEmpty(model.Data))
-            return await ReceiveContent();
+            return string.Empty;
 
         var cookie = HttpContext.Request.Cookies["deviceId"];
         var deviceId = cookie ?? "";
 
         var userId = await GetUserId(deviceId);
 
-        var value = new BedrockContent()
+        var content = await WriteContent(userId, model.Data); // 프로젝트 아이디 가져오기 "project-0"
+
+        var userSetting = await GetUserSetting(userId);
+
+        var html = ContentToHtml(content, userSetting.ShowDate);
+
+        return html;
+    }
+
+    private async Task<BedrockUserSetting> GetUserSetting(string userId)
+    {
+        var userSetting = await AwsKey.Context.LoadAsync<BedrockUserSetting>("0", userId);
+
+        if (userSetting == null)
         {
-            Id = Guid.NewGuid().ToString(),
-            Partition = "0",
-            Text = model.Data,
-            Project = userId, // 프로젝트 아이디 가져오기 "project-0"
-            Done = false,
-            Tick = DateTime.UtcNow.Ticks,
-        };
+            userSetting = new BedrockUserSetting()
+            {
+                UserId = userId,
+                Partition = "0",
+                ShowDate = false,
+                CurrentProject = "project-0"
+            };
 
-        await AwsKey.Context.SaveAsync(value);
+            await AwsKey.Context.SaveAsync(userSetting);
+        }
 
-        return await ReceiveContent();
+        return userSetting;
     }
 
     public async Task<bool> FirstSetting(string userId)
@@ -297,7 +350,7 @@ public class HomeController : Controller
         return true;
     }
 
-    public async Task<bool> WriteContent(string projectId, string contentText)
+    public async Task<BedrockContent> WriteContent(string projectId, string contentText)
     {
         var value = new BedrockContent()
         {
@@ -311,7 +364,7 @@ public class HomeController : Controller
 
         await AwsKey.Context.SaveAsync(value);
 
-        return true;
+        return value;
     }
 
     [HttpPost]
@@ -329,11 +382,11 @@ public class HomeController : Controller
 
         await AwsKey.Context.SaveAsync(content);
 
-        return await ReceiveContent();
+        return await ReceiveFullContent();
     }
 
     [HttpPost]
-    public async Task<IActionResult> ReceiveContent()
+    public async Task<IActionResult> ReceiveFullContent()
     {
         var deviceId = GetDeviceId();
         var userId = await GetUserId(deviceId);
@@ -351,40 +404,59 @@ public class HomeController : Controller
         if (contents.Count == 0)
             return Content("");
 
+        var userSetting = await GetUserSetting(userId);
+
         StringBuilder builder = new();
 
         foreach (var content in contents.OrderBy(content => content.Tick))
         {
-            //todo! 최적화하기 , 클라에서 해당 정보 가지고 있도록
-            var dateTime = DateTime.MinValue.AddTicks(content.Tick);
-            var timeSpan = DateTime.Now - DateTime.UtcNow;
-            var fixedDateTime = dateTime.Add(timeSpan);
-
-            // <font color="#6c6c6c">
-            // {(fixedDateTime.Date != DateTime.Now.Date ? $"{fixedDateTime:MM.dd.yy}" : $"{fixedDateTime:HH:mm}")}
-            // </font>
-
-            var contentText = Markdown.ToHtml(content.Text).Replace("<p>", "").Replace("</p>", "");
-
-            var text = $"""
-                        <div style="max-width: 100%;">
-                            <div class="ob-box" style="width=100%; cursor: text; background-color:transparent;">
-                                <div style="width:100%; height:100%; align-items: center;">
-                                 <div style="width:100%; height:100%; display: flex;">
-                                     <div onclick="ClickDone('{content.Id}')" style="cursor: pointer; min-width: 18px; max-width:18px; min-height: 18px; max-height: 18px; border: solid #cdd0d4;  border-width:1px; margin-top: 3px; margin-right: 10px; border-radius: 5px;"></div>
-                                         <div contenteditable="true" style="width:100%; cursor: text; border: none; outline: none;">
-                                         {contentText}
-                                         </div>
-                                     </div>
-                                </div>
-                            </div>
-                        </div>
-                        """;
-
-            builder.Append(text);
+            var html = ContentToHtml(content, userSetting.ShowDate);
+            builder.Append(html);
         }
 
         return Content(builder.ToString(), "text/html");
+    }
+
+    private string ContentToHtml(BedrockContent content, bool showDate)
+    {
+        //todo! 최적화하기 , 클라에서 해당 정보 가지고 있도록
+        var dateTime = DateTime.MinValue.AddTicks(content.Tick);
+        var timeSpan = DateTime.Now - DateTime.UtcNow;
+        var fixedDateTime = dateTime.Add(timeSpan);
+
+        var contentText = Markdown.ToHtml(content.Text).Replace("<p>", "").Replace("</p>", "");
+
+        var resultContent = new StringBuilder();
+
+        if (showDate)
+        {
+            var dateText = $"""
+                            <font color="#6c6c6c">
+                            {(fixedDateTime.Date != DateTime.Now.Date ? $"{fixedDateTime:MM.dd.yy}" : $"{fixedDateTime:HH:mm}")}
+                            </font>
+                            """;
+
+            resultContent.Append(dateText);
+        }
+
+        resultContent.Append(contentText);
+
+        var text = $"""
+                    <div style="max-width: 100%;">
+                        <div class="ob-box" style="width=100%; cursor: text; background-color:transparent;">
+                            <div style="width:100%; height:100%; align-items: center;">
+                             <div style="width:100%; height:100%; display: flex;">
+                                 <div onclick="ClickDone('{content.Id}')" style="cursor: pointer; min-width: 18px; max-width:18px; min-height: 18px; max-height: 18px; border: solid #cdd0d4;  border-width:1px; margin-top: 3px; margin-right: 10px; border-radius: 5px;"></div>
+                                     <div contenteditable="true" style="width:100%; cursor: text; border: none; outline: none;">
+                                     {resultContent}
+                                     </div>
+                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                    """;
+
+        return text;
     }
 
     public async Task<string> GetUserId(string emailId)

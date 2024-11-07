@@ -3,6 +3,7 @@ using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DataModel;
 using Amazon.Runtime;
 using Bedrock;
+using Microsoft.AspNetCore.ResponseCompression;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -13,6 +14,11 @@ builder.Services.AddRouting(options =>
         options.LowercaseUrls = true;
     }
 );
+builder.Services.AddResponseCompression(options =>
+{
+    options.Providers.Add<GzipCompressionProvider>();
+    options.EnableForHttps = true;
+});
 
 // 세션 서비스 추가
 builder.Services.AddSession(options =>
@@ -39,29 +45,17 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
-// app.Use(async (context, next) =>
-// {
-//     if (context.Request.Method.Equals("GET", StringComparison.OrdinalIgnoreCase))
-//     {
-//         var ipAddress = context.Request.Headers["X-Forwarded-For"].FirstOrDefault() ?? context.Connection.RemoteIpAddress.ToString();
-//         var requestedUrl = $"{context.Request.Scheme}://{context.Request.Host}{context.Request.Path}{context.Request.QueryString}";
-//     
-//         // 콘솔에 로그 출력
-//         Console.WriteLine($"IP : {ipAddress} / {requestedUrl}");
-//     }
-//     
-//     await next.Invoke(); //다음 pipeline 호출
-// });
-
 app.UseRouting();
 
 app.UseAuthorization();
 
 app.UseSession();
 
+app.UseResponseCompression();
+
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Bedrock}/{id?}");
+    pattern: "{controller=Home}/{action=Bedrock}/{emailId?}");
 
 app.MapControllers();
 

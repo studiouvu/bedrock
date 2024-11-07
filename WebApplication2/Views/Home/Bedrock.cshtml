@@ -78,6 +78,15 @@
                             </font>
                         </div>
                     </div>
+                    <div
+                        onclick="ShowDate()"
+                        style="cursor: pointer; height: 100%; background-color: #1f1f1f; padding: 4px 9px; margin-left: auto; border-radius: 10px;">
+                        <div class="text-center">
+                            <font color="#919191">
+                                🗓️
+                            </font>
+                        </div>
+                    </div>
                 </div>
                 <div
                     style="max-width: 100%; margin-left: auto; margin-right: auto; background-color: #1f1f1f; padding: 15px;border-radius: 10px;">
@@ -86,7 +95,7 @@
                     <div style="min-height: 5px;">
                     </div>
                     <div style="max-width: 100%; display: flex; align-items: center;">
-                        <div onclick="Hello()"
+                        <div 
                              style="cursor: pointer; width: 18px; height: 18px; border: solid #cdd0d4;  border-width:1px; margin-right: 4px; border-radius: 5px;">
                         </div>
                         <div class="input-box-holder" style="width: 100%; background: #1b1c1c; overflow-wrap: break-word;">
@@ -136,7 +145,7 @@
 {
     <script type="text/javascript">
     $(function () {
-        fetch('@Url.Action("ReceiveContent")', {
+        fetch('@Url.Action("ReceiveFullContent")', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json; charset=utf-8'
@@ -165,8 +174,8 @@
         });
     });
 
-    function ReceiveContent() {
-        fetch('@Url.Action("ReceiveContent")', {
+    function ReceiveFullContent() {
+        fetch('@Url.Action("ReceiveFullContent")', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json; charset=utf-8'
@@ -254,7 +263,7 @@
             return response.text();
         })
         .then(data => {
-            $('#tblContent').html(data);
+            $('#tblContent').append(data);
         })
         .catch(error => {
             $('#tblContent').html("fail");
@@ -319,6 +328,27 @@
         .catch(error => {
             $('#tblContent').html("fail");
         });
+    }
+
+    function ShowDate() {
+        fetch('@Url.Action("ReceiveShowDate")', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json; charset=utf-8'
+            },
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('네트워크 응답에 문제가 있습니다.');
+                }
+                return response.text();
+            })
+            .then(data => {
+                ReceiveFullContent();
+            })
+            .catch(error => {
+                $('#tblContent').html("fail");
+            });
     }
 </script>
 }
