@@ -1,7 +1,4 @@
 ﻿@using Bedrock.Views
-@{
-    ViewData["Title"] = "Bedrock";
-}
 <div class="text-left" style="width: 100%;">
     <div class="hide-on-small">
         <div id="floating"
@@ -80,10 +77,10 @@
                     <div>
                         <input
                             id="project-name"
-                            class="title-input input-box" 
-                            type="text" 
-                            style="height:100%" 
-                            placeholder="" 
+                            class="title-input input-box"
+                            type="text"
+                            style="height:100%"
+                            placeholder=""
                             value="New Project"
                             onfocusout="InputProjectName()"
                             onkeyup="InputProjectName()"/>
@@ -274,6 +271,7 @@
             })
             .then(data => {
                 document.getElementById('project-name').value = data;
+                document.title = data + " - Bedrock";
             })
             .catch(error => {
                 $('#project-name').html("fail");
