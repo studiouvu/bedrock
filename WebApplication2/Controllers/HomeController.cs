@@ -8,6 +8,7 @@ using Amazon.DynamoDBv2.DocumentModel;
 using Amazon.Runtime;
 using Bedrock.Models;
 using Markdig;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 
@@ -31,43 +32,56 @@ public class HomeController : Controller
         return View();
     }
 
-    public async Task<IActionResult> Bedrock()
+    public async Task<IActionResult> Bedrock(string deviceId)
     {
-        var deviceId = GetDeviceId();
-
-        var isFrist = false;
+        //최적화 가능할듯
+        if (string.IsNullOrEmpty(deviceId))
+            deviceId = GetDeviceId();
 
         if (string.IsNullOrEmpty(deviceId))
         {
-            deviceId = Guid.NewGuid().ToString();
-            HttpContext.Response.Cookies.Append("deviceId", deviceId);
-            HttpContext.Response.Cookies.Append("version", "0.1");
-            isFrist = true;
+            ViewBag.Login = false;
         }
-
-        var userId = await GetUserId(deviceId);
-
-        if (isFrist)
+        else
         {
-            var firstProject = await FirstSetting(userId);
+            var userId = await GetUserId(deviceId);
+            var emailId = await GetEmailId(userId);
 
-            var userSetting = await GetUserSetting(userId);
-            userSetting.CurrentProject = firstProject;
-            userSetting.ShowDate = true;
-            await SaveUserSetting(userSetting);
+            ViewBag.Login = string.IsNullOrEmpty(emailId) == false;
         }
 
-        var emailId = await GetEmailId(userId);
-
-        ViewBag.Login = string.IsNullOrEmpty(emailId) == false;
+        ViewBag.deviceId = deviceId;
 
         return View();
     }
 
     [HttpPost]
-    public async Task<bool> ReceiveCreateProject()
+    public async Task<string> ReceiveDeviceId([FromBody] DataModel data)
     {
-        var deviceId = GetDeviceId();
+        var deviceId = data.DeviceId;
+
+        if (string.IsNullOrEmpty(deviceId))
+        {
+            deviceId = GetDeviceId();
+        }
+
+        if (string.IsNullOrEmpty(deviceId))
+        {
+            deviceId = Guid.NewGuid().ToString();
+            await GetUserId(deviceId);
+        }
+
+        HttpContext.Session.SetString("deviceId", deviceId);
+        HttpContext.Response.Cookies.Append("deviceId", deviceId);
+
+        return deviceId;
+    }
+    
+
+    [HttpPost]
+    public async Task<bool> ReceiveCreateProject([FromBody] DataModel data)
+    {
+        var deviceId = data.DeviceId;
         var userId = await GetUserId(deviceId);
         var newProject = await CreateProject(userId);
 
@@ -85,7 +99,7 @@ public class HomeController : Controller
         if (string.IsNullOrEmpty(model.Data))
             return string.Empty;
 
-        var deviceId = GetDeviceId();
+        var deviceId = model.DeviceId;
         var userId = await GetUserId(deviceId);
         var userSetting = await GetUserSetting(userId);
 
@@ -99,7 +113,7 @@ public class HomeController : Controller
     [HttpPost]
     public async Task<bool> ReceiveChangeProject([FromBody] DataModel data)
     {
-        var deviceId = GetDeviceId();
+        var deviceId = data.DeviceId;
         var userId = await GetUserId(deviceId);
         var userSetting = await GetUserSetting(userId);
 
@@ -116,18 +130,18 @@ public class HomeController : Controller
     }
 
     [HttpPost]
-    public async Task<string> ReceiveUserId()
+    public async Task<string> ReceiveUserId([FromBody] DataModel data)
     {
-        var deviceId = GetDeviceId();
+        var deviceId = data.DeviceId;
         var userId = await GetUserId(deviceId);
         var emailId = await GetEmailId(userId);
         return string.IsNullOrEmpty(emailId) ? userId : emailId;
     }
 
     [HttpPost]
-    public async Task<string> ReceiveCurrentProjectName()
+    public async Task<string> ReceiveCurrentProjectName([FromBody] DataModel data)
     {
-        var deviceId = GetDeviceId();
+        var deviceId = data.DeviceId;
         var userId = await GetUserId(deviceId);
         var userSetting = await GetUserSetting(userId);
 
@@ -139,7 +153,7 @@ public class HomeController : Controller
     [HttpPost]
     public async Task<bool> ReceiveSendProjectName([FromBody] DataModel model)
     {
-        var deviceId = GetDeviceId();
+        var deviceId = model.DeviceId;
         var userId = await GetUserId(deviceId);
         var userSetting = await GetUserSetting(userId);
 
@@ -170,9 +184,9 @@ public class HomeController : Controller
     }
 
     [HttpPost]
-    public async Task<string> ReceiveLastProjectList()
+    public async Task<string> ReceiveLastProjectList([FromBody] DataModel model)
     {
-        var deviceId = GetDeviceId();
+        var deviceId = model.DeviceId;
         var userId = await GetUserId(deviceId);
         var projects = await ReceiveProjects(userId);
 
@@ -197,9 +211,9 @@ public class HomeController : Controller
     }
 
     [HttpPost]
-    public async Task<string> ReceiveProjectList()
+    public async Task<string> ReceiveProjectList([FromBody] DataModel model)
     {
-        var deviceId = GetDeviceId();
+        var deviceId = model.DeviceId;
         var userId = await GetUserId(deviceId);
         var userSetting = await GetUserSetting(userId);
         var projects = await ReceiveProjects(userId);
@@ -225,29 +239,28 @@ public class HomeController : Controller
         return builder.ToString();
     }
 
-
     [HttpPost]
-    public async Task<IActionResult> ClickDone([FromBody] DataModel model)
+    public async Task<bool> ClickDone([FromBody] DataModel model)
     {
         var id = model.Data;
 
         var content = await AwsKey.Context.LoadAsync<BedrockContent>("0", id);
 
         if (content == null)
-            return NotFound("해당 아이템을 찾을 수 없습니다.");
+            return false;
 
         content.Done = true;
         content.DoneTick = DateTime.UtcNow.Ticks;
 
         await AwsKey.Context.SaveAsync(content);
 
-        return await ReceiveFullContent();
+        return true;
     }
 
     [HttpPost]
-    public async Task<IActionResult> ReceiveFullContent()
+    public async Task<IActionResult> ReceiveFullContent([FromBody] DataModel model)
     {
-        var deviceId = GetDeviceId();
+        var deviceId = model.DeviceId;
         var userId = await GetUserId(deviceId);
         var userSetting = await GetUserSetting(userId);
 
@@ -314,7 +327,7 @@ public class HomeController : Controller
     [HttpPost]
     public async Task<bool> ReceiveEmailCode([FromBody] DataModel model)
     {
-        var emailId = HttpContext.Request.Cookies["emailId"];
+        var emailId = model.Content;
         var code = model.Data;
 
         var verify = await VerifyCode(emailId, code);
@@ -324,7 +337,7 @@ public class HomeController : Controller
 
         var userId = await GetUserIdToEmail(emailId);
 
-        var deviceId = GetDeviceId();
+        var deviceId = model.DeviceId;
 
         if (string.IsNullOrEmpty(userId))
         {
@@ -357,9 +370,9 @@ public class HomeController : Controller
     }
 
     [HttpPost]
-    public async Task<bool> ReceiveCurrentProjectArchive()
+    public async Task<bool> ReceiveCurrentProjectArchive([FromBody] DataModel data)
     {
-        var deviceId = GetDeviceId();
+        var deviceId = data.DeviceId;
         var userId = await GetUserId(deviceId);
 
         var userSetting = await GetUserSetting(userId);
@@ -379,9 +392,9 @@ public class HomeController : Controller
     }
 
     [HttpPost]
-    public async Task<bool> ReceiveShowDate()
+    public async Task<bool> ReceiveShowDate([FromBody] DataModel data)
     {
-        var deviceId = GetDeviceId();
+        var deviceId = data.DeviceId;
         var userId = await GetUserId(deviceId);
 
         var userSetting = await GetUserSetting(userId);
@@ -394,9 +407,9 @@ public class HomeController : Controller
     }
 
     [HttpPost]
-    public async Task<string> ReceiveTaskCount()
+    public async Task<string> ReceiveTaskCount([FromBody] DataModel data)
     {
-        var deviceId = GetDeviceId();
+        var deviceId = data.DeviceId;
         var userId = await GetUserId(deviceId);
         var userSetting = await GetUserSetting(userId);
         var project = userSetting.CurrentProject;
@@ -462,14 +475,15 @@ public class HomeController : Controller
         return true;
     }
 
-
     public string GetDeviceId()
     {
-        var deviceId = HttpContext.Request.Cookies["deviceId"];
-        var version = HttpContext.Request.Cookies["version"];
+        var deviceId = HttpContext.Request.Query["deviceId"].ToString();
 
-        if (version != "0.1")
-            return "";
+        if (string.IsNullOrEmpty(deviceId))
+            deviceId = HttpContext.Session.GetString("deviceId");
+
+        if (string.IsNullOrEmpty(deviceId))
+            deviceId = HttpContext.Request.Cookies["deviceId"];
 
         return deviceId ?? "";
     }
@@ -700,6 +714,21 @@ public class HomeController : Controller
         return text;
     }
 
+    public async Task<bool> ExistUserId(string id)
+    {
+        if (LocalDB.UserIdDictionary.TryGetValue(id, out var userId))
+            return true;
+
+        var conditions = new List<ScanCondition>
+        {
+            new("Id", ScanOperator.Equal, id)
+        };
+
+        var deviceIds = await AwsKey.Context.ScanAsync<BedrockDeviceId>(conditions).GetRemainingAsync();
+
+        return deviceIds.Count != 0;
+    }
+
     public async Task<string> GetUserId(string id)
     {
         if (LocalDB.UserIdDictionary.TryGetValue(id, out var userId))
@@ -725,6 +754,13 @@ public class HomeController : Controller
 
             await AwsKey.Context.SaveAsync(deviceId);
 
+            var firstProject = await FirstSetting(newUserId);
+
+            var userSetting = await GetUserSetting(newUserId);
+            userSetting.CurrentProject = firstProject;
+            userSetting.ShowDate = true;
+            await SaveUserSetting(userSetting);
+            
             return newUserId;
         }
 

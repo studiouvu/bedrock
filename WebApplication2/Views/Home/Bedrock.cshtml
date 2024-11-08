@@ -131,31 +131,33 @@
             </div>
             @if (ViewBag.Login == false)
             {
-                <div style="max-width: 400px; margin-top: 80px; margin-left: auto; margin-right: auto; background-color: #044a80; padding: 15px;border-radius: 10px;">
-                    <div class="text-center" style="width: 100%; align-items: center;">
-                        <div id="login-form">
-                            <h7>
-                                로그인하여 데이터를 안전하게 보관하세요
-                            </h7>
-                            <div style="max-width: 100%; margin-top: 10px; display: flex; align-items: center;">
-                                <div class="input-box-holder" style="width: 100%; background: #092c47; overflow-wrap: break-word;">
-                                    <div style="width: 100%; height: 100%; margin-left: 10px; margin-right: 10px;">
-                                        <input id="mail-input" class="input-box" type="text" placeholder="your-email@@email.com" onKeyDown="SendEmail(event)"/>
+                <span id="login-holder">
+                    <div style="max-width: 400px; margin-top: 80px; margin-left: auto; margin-right: auto; background-color: #044a80; padding: 15px;border-radius: 10px;">
+                        <div class="text-center" style="width: 100%; align-items: center;">
+                            <div id="login-form">
+                                <h7>
+                                    로그인하여 데이터를 안전하게 보관하세요
+                                </h7>
+                                <div style="max-width: 100%; margin-top: 10px; display: flex; align-items: center;">
+                                    <div class="input-box-holder" style="width: 100%; background: #092c47; overflow-wrap: break-word;">
+                                        <div style="width: 100%; height: 100%; margin-left: 10px; margin-right: 10px;">
+                                            <input id="mail-input" class="input-box" type="text" placeholder="your-email@@email.com" onKeyDown="SendEmail(event)"/>
+                                        </div>
                                     </div>
-                                </div>
-                                <div
-                                    class="click-color unselectable input-box-holder"
-                                    onclick="SendEmailForce()"
-                                    style="background: #092c47; cursor: pointer; min-width: 42px; min-height: 42px; display: flex; align-items: center;
+                                    <div
+                                        class="click-color unselectable input-box-holder"
+                                        onclick="SendEmailForce()"
+                                        style="background: #092c47; cursor: pointer; min-width: 42px; min-height: 42px; display: flex; align-items: center;
                                     padding: 5px; margin-left: 5px; ">
-                                    <div class="text-center" style="width: 100%; align-items: center;">
-                                        →
+                                        <div class="text-center" style="width: 100%; align-items: center;">
+                                            →
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                </span>
             }
         </div>
     </div>
@@ -186,6 +188,9 @@
 @section Scripts
 {
     <script type="text/javascript">
+        var deviceId = "@ViewBag.DeviceId";
+        var emailId = "";
+        
     $(function () {
         document.addEventListener('keydown', function (event) {
             var key = event.key || event.keyCode;
@@ -195,9 +200,7 @@
             return false;
         });
 
-        ReceiveFullContent();
-        ReceiveUserId();
-        GetTaskCount();
+        ReceiveDeviceId();
         
         /*const myDivs = document.querySelectorAll('.click-animate');
 
@@ -208,16 +211,14 @@
         });*/
     });
 
-    function ReceiveFullContent() {
-        ReceiveProjectName();
-        GetProjectList();
-        GetLastProjects();
-        
-        fetch('@Url.Action("ReceiveFullContent")', {
+    function ReceiveDeviceId() {
+        fetch('@Url.Action("ReceiveDeviceId")', {
             method: 'POST',
+            credentials: 'include', 
             headers: {
                 'Content-Type': 'application/json; charset=utf-8'
-            }
+            },
+            body: JSON.stringify({ deviceId: deviceId })
         })
         .then(response => {
             if (!response.ok) {
@@ -226,21 +227,61 @@
             return response.text();
         })
         .then(data => {
-            $('#tblContent').html(data);
+            deviceId = data;
+            ReceiveFullContent();
+            ReceiveUserId();
+            GetTaskCount();
         })
         .catch(error => {
-            $('#tblContent').html("fail");
+           
         });
+    }
 
+    function ReceiveFullContent() {
+        ReceiveProjectName();
+        GetProjectList();
+        GetLastProjects();
         GetTaskCount();
+        ReceiveContent();
+    }
+
+    function ReceiveContent() {
+        fetch('@Url.Action("ReceiveFullContent")', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json; charset=utf-8'
+            },
+            body:
+                JSON.stringify({
+                    DeviceId: deviceId,
+                })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('fail to load user id');
+                }
+                return response.text();
+            })
+            .then(data => {
+                $('#tblContent').html(data);
+            })
+            .catch(error => {
+                $('#tblContent').html("fail");
+            });
     }
 
     function ReceiveUserId() {
         fetch('@Url.Action("ReceiveUserId")', {
             method: 'POST',
+            credentials: 'include', 
             headers: {
                 'Content-Type': 'application/json; charset=utf-8'
-            }
+            },
+            body:
+                JSON.stringify({
+                    DeviceId: deviceId,
+                })
         })
         .then(response => {
             if (!response.ok) {
@@ -259,9 +300,14 @@
     function ReceiveProjectName() {
         fetch('@Url.Action("ReceiveCurrentProjectName")', {
             method: 'POST',
+            credentials: 'include', 
             headers: {
                 'Content-Type': 'application/json; charset=utf-8'
-            }
+            },
+            body:
+                JSON.stringify({
+                    DeviceId: deviceId,
+                })
         })
             .then(response => {
                 if (!response.ok) {
@@ -279,10 +325,9 @@
     }
 
     function ClickDone(id) {
-        console.log("ClickDone");
-
         fetch('@Url.Action("ClickDone")', {
             method: 'POST',
+            credentials: 'include', 
             headers: {
                 'Content-Type': 'application/json; charset=utf-8'
             },
@@ -295,7 +340,7 @@
             return response.text();
         })
         .then(data => {
-            $('#tblContent').html(data);
+            ReceiveContent();
             GetTaskCount();
         })
         .catch(error => {
@@ -309,10 +354,13 @@
 
         fetch('@Url.Action("ReceiveText")', {
             method: 'POST',
+            credentials: 'include', 
             headers: {
                 'Content-Type': 'application/json; charset=utf-8'
             },
-            body: JSON.stringify({ data: typped })
+            body: JSON.stringify({
+            deviceId: deviceId,
+             data: typped })
         })
             .then(response => {
                 if (!response.ok) {
@@ -353,6 +401,7 @@
 
         fetch('@Url.Action("ReceiveEmailId")', {
             method: 'POST',
+            credentials: 'include', 
             headers: {
                 'Content-Type': 'application/json; charset=utf-8'
             },
@@ -365,6 +414,7 @@
                 return response.text();
             })
             .then(data => {
+                emailId = typped;
                 $('#login-form').html(data);
             })
             .catch(error => {
@@ -387,10 +437,14 @@
 
         fetch('@Url.Action("ReceiveEmailCode")', {
             method: 'POST',
+            credentials: 'include', 
             headers: {
                 'Content-Type': 'application/json; charset=utf-8'
             },
-            body: JSON.stringify({ data: typped })
+            body: JSON.stringify({ 
+                deviceId: deviceId,
+                content: emailId,
+                data: typped })
         })
             .then(response => {
                 if (!response.ok) {
@@ -399,7 +453,8 @@
                 return response.text();
             })
             .then(data => {
-                location.reload(true);
+                ReceiveFullContent();
+                $('#login-holder').html("");
             })
             .catch(error => {
                 $('#tblContent').html("fail");
@@ -414,10 +469,13 @@
     function SendProjectName(name) {
         fetch('@Url.Action("ReceiveSendProjectName")', {
             method: 'POST',
+            credentials: 'include', 
             headers: {
                 'Content-Type': 'application/json; charset=utf-8'
             },
-            body: JSON.stringify({ data: name })
+            body: JSON.stringify({
+            deviceId: deviceId,
+             data: name })
         })
             .then(response => {
                 if (!response.ok) {
@@ -436,9 +494,11 @@
     function ShowDate() {
         fetch('@Url.Action("ReceiveShowDate")', {
             method: 'POST',
+            credentials: 'include', 
             headers: {
                 'Content-Type': 'application/json; charset=utf-8'
             },
+            body: JSON.stringify({ deviceId: deviceId })
         })
         .then(data => {
             ReceiveFullContent();
@@ -451,9 +511,14 @@
     function GetTaskCount() {
         fetch('@Url.Action("ReceiveTaskCount")', {
             method: 'POST',
+            credentials: 'include', 
             headers: {
                 'Content-Type': 'application/json; charset=utf-8'
             },
+            body:
+                JSON.stringify({
+                    DeviceId: deviceId,
+                })
         })
         .then(response => {
             if (!response.ok) {
@@ -471,9 +536,14 @@
     function GetLastProjects() {
         fetch('@Url.Action("ReceiveLastProjectList")', {
             method: 'POST',
+            credentials: 'include', 
             headers: {
                 'Content-Type': 'application/json; charset=utf-8'
             },
+            body:
+                JSON.stringify({
+                    DeviceId: deviceId,
+                })
         })
             .then(response => {
                 if (!response.ok) {
@@ -491,9 +561,14 @@
     function GetProjectList() {
         fetch('@Url.Action("ReceiveProjectList")', {
             method: 'POST',
+            credentials: 'include', 
             headers: {
                 'Content-Type': 'application/json; charset=utf-8'
             },
+            body:
+                JSON.stringify({
+                    DeviceId: deviceId,
+                })
         })
             .then(response => {
                 if (!response.ok) {
@@ -511,9 +586,11 @@
     function CreateNewProject() {
         fetch('@Url.Action("ReceiveCreateProject")', {
             method: 'POST',
+            credentials: 'include', 
             headers: {
                 'Content-Type': 'application/json; charset=utf-8'
             },
+            body: JSON.stringify({ deviceId: deviceId})
         })
         .then(response => {
             if (!response.ok) {
@@ -534,10 +611,13 @@
         
         fetch('@Url.Action("ReceiveChangeProject")', {
             method: 'POST',
+            credentials: 'include', 
             headers: {
                 'Content-Type': 'application/json; charset=utf-8'
             },
-            body: JSON.stringify({ data: projectId })
+            body: JSON.stringify({ 
+            deviceId: deviceId,
+            data: projectId })
         })
             .then(response => {
                 if (!response.ok) {
@@ -556,10 +636,13 @@
     function CurrentProjectArchive(projectId) {
         fetch('@Url.Action("ReceiveCurrentProjectArchive")', {
             method: 'POST',
+            credentials: 'include', 
             headers: {
                 'Content-Type': 'application/json; charset=utf-8'
             },
-            body: JSON.stringify({ data: projectId })
+            body: JSON.stringify({
+            deviceId: deviceId,
+             data: projectId })
         })
             .then(response => {
                 if (!response.ok) {
@@ -579,5 +662,7 @@
         location.reload(true);
     }
     
-</script>
+
+    
+    </script>
 }

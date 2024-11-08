@@ -3,6 +3,8 @@
 public class DataModel
 {
     public string Data { get; set; }
+    public string DeviceId { get; set; }
+    public string Content { get; set; }
 }
 
 public class BedrockContent
