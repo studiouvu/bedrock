@@ -145,10 +145,25 @@ public class HomeController : Controller
 
         var bedrockProject = await GetProject(userSetting.CurrentProject);
 
-        if (bedrockProject.Name == model.Data)
+        var bedrockProjectName = model.Data;
+
+        if (string.IsNullOrEmpty(bedrockProjectName))
+        {
+            var emoji = new List<string>()
+            {
+                "🐔",
+                "🍗",
+                "🫎",
+                "🦄",
+                "🦐",
+            };
+            bedrockProjectName = emoji[new Random().Next(0, emoji.Count)];
+        }
+
+        if (bedrockProject.Name == bedrockProjectName)
             return true;
-        
-        bedrockProject.Name = model.Data;
+
+        bedrockProject.Name = bedrockProjectName;
         await SaveProject(bedrockProject);
 
         return true;
