@@ -1,4 +1,5 @@
-﻿namespace Bedrock.Controllers;
+﻿using Bedrock.Models;
+namespace Bedrock.Controllers;
 
 public class LocalDB
 {

@@ -5,68 +5,14 @@ using Amazon;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.DocumentModel;
-using Amazon.DynamoDBv2.Model;
 using Amazon.Runtime;
 using Bedrock.Models;
 using Markdig;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using Bedrock.Views;
 
 namespace Bedrock.Controllers;
 
-public class DataModel
-{
-    public string Data { get; set; }
-}
-public class BedrockContent
-{
-    public string Partition;
-    public string Project;
-    public string ParentContent;
-    public string Id;
-    public string Text;
-    public bool Done;
-    public long Tick;
-    public long DoneTick;
-}
-public class BedrockProject
-{
-    public string Partition;
-    public string Id;
-    public string UserId;
-    public string Name;
-    public long CreateTick;
-    public long LastOpenTick;
-    public bool IsArchive;
-    public long ArchiveTick;
-}
-public class BedrockDeviceId
-{
-    public string Id;
-    public string UserId;
-    public string Partition;
-}
-public class BedrockEmailId
-{
-    public string Id;
-    public string UserId;
-    public string Partition;
-}
-public class EmailCode
-{
-    public string Email;
-    public string Code;
-    public DateTime DateTime;
-    public string Partition;
-}
-public class BedrockUserSetting
-{
-    public string UserId;
-    public string Partition;
-    public bool ShowDate;
-    public string CurrentProject;
-}
 public class HomeController : Controller
 {
     private readonly ILogger<HomeController> _logger;
@@ -134,6 +80,23 @@ public class HomeController : Controller
     }
 
     [HttpPost]
+    public async Task<string> ReceiveText([FromBody] DataModel model)
+    {
+        if (string.IsNullOrEmpty(model.Data))
+            return string.Empty;
+
+        var deviceId = GetDeviceId();
+        var userId = await GetUserId(deviceId);
+        var userSetting = await GetUserSetting(userId);
+
+        var content = await WriteContent(userSetting.CurrentProject, model.Data);
+
+        var html = ContentToHtml(content, userSetting.ShowDate);
+
+        return html;
+    }
+
+    [HttpPost]
     public async Task<bool> ReceiveChangeProject([FromBody] DataModel data)
     {
         var deviceId = GetDeviceId();
@@ -149,40 +112,6 @@ public class HomeController : Controller
         project.LastOpenTick = DateTime.UtcNow.Ticks;
         await SaveProject(project);
 
-        return true;
-    }
-
-    public async Task<BedrockProject> CreateProject(string userId, string projectName = "")
-    {
-        var projectId = Guid.NewGuid().ToString();
-
-        if (string.IsNullOrEmpty(projectName))
-            projectName = $"새로운 프로젝트-{projectId.Substring(0, 3)}";
-
-        var project = new BedrockProject()
-        {
-            Id = projectId,
-            UserId = userId,
-            Partition = "0",
-            Name = projectName,
-            CreateTick = DateTime.UtcNow.Ticks,
-            LastOpenTick = DateTime.UtcNow.Ticks,
-        };
-
-        await AwsKey.Context.SaveAsync(project);
-
-        return project;
-    }
-
-    public async Task<BedrockProject> GetProject(string projectId)
-    {
-        var project = await AwsKey.Context.LoadAsync<BedrockProject>("0", projectId);
-        return project;
-    }
-
-    public async Task<bool> SaveProject(BedrockProject project)
-    {
-        await AwsKey.Context.SaveAsync(project);
         return true;
     }
 
@@ -262,101 +191,55 @@ public class HomeController : Controller
 
         return builder.ToString();
     }
-    public async Task<List<BedrockProject>> ReceiveProjects(string userId)
+
+
+    [HttpPost]
+    public async Task<IActionResult> ClickDone([FromBody] DataModel model)
     {
+        var id = model.Data;
+
+        var content = await AwsKey.Context.LoadAsync<BedrockContent>("0", id);
+
+        if (content == null)
+            return NotFound("해당 아이템을 찾을 수 없습니다.");
+
+        content.Done = true;
+        content.DoneTick = DateTime.UtcNow.Ticks;
+
+        await AwsKey.Context.SaveAsync(content);
+
+        return await ReceiveFullContent();
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> ReceiveFullContent()
+    {
+        var deviceId = GetDeviceId();
+        var userId = await GetUserId(deviceId);
+        var userSetting = await GetUserSetting(userId);
+
+        var project = userSetting.CurrentProject;
+
         var conditions = new List<ScanCondition>
         {
-            new("Partition", ScanOperator.Equal, "0"),
-            new("UserId", ScanOperator.Equal, userId),
-            new("IsArchive", ScanOperator.NotEqual, true)
+            new("Project", ScanOperator.Equal, project),
+            new("Done", ScanOperator.Equal, false),
         };
 
-        var bedrockProjects = await AwsKey.Context.ScanAsync<BedrockProject>(conditions).GetRemainingAsync();
+        var contents = await AwsKey.Context.ScanAsync<BedrockContent>(conditions).GetRemainingAsync();
 
-        return bedrockProjects.ToList();
-    }
+        if (contents.Count == 0)
+            return Content("");
 
-    public string GetDeviceId()
-    {
-        var deviceId = HttpContext.Request.Cookies["deviceId"];
-        var version = HttpContext.Request.Cookies["version"];
+        StringBuilder builder = new();
 
-        if (version != "0.1")
-            return "";
-
-        return deviceId ?? "";
-    }
-
-    public async Task<string> GetEmailId(string userId)
-    {
-        var conditions = new List<ScanCondition>
+        foreach (var content in contents.OrderBy(content => content.Tick))
         {
-            new("UserId", ScanOperator.Equal, userId)
-        };
-
-        var emailIds = await AwsKey.Context.ScanAsync<BedrockEmailId>(conditions).GetRemainingAsync();
-
-        if (emailIds.Count == 0)
-            return string.Empty;
-
-        var emailId = emailIds.First();
-        return emailId.Id;
-    }
-
-    public async Task<bool> SendMail(string email)
-    {
-        var to = email;
-        var from = "\"Bedrock Team\" <app@studiouvu.com>";
-        var message = new MailMessage(from, to);
-
-        var code = GenerateRandomCode(4);
-
-        var mailbody = $"<div style='padding: 20px;'><img src=\"https://bedrock.es/images/bedrock.png\"/><p>아래의 코드를 입력해주세요.</p><h1>{code}</h1></div>";
-        message.Subject = "Bedrock 연동 인증 코드";
-        message.Body = mailbody;
-        message.Headers.Add("Sender", "Test");
-        message.BodyEncoding = Encoding.UTF8;
-        message.IsBodyHtml = true;
-
-        var client = new SmtpClient("smtp.gmail.com", 587); //Gmail smtp    
-        var basicCredential1 = new System.Net.NetworkCredential("app@studiouvu.com", "uwzt qfez aquv qwhm");
-
-        client.EnableSsl = true;
-        client.UseDefaultCredentials = false;
-        client.Credentials = basicCredential1;
-
-        await client.SendMailAsync(message);
-
-        var credentials = new BasicAWSCredentials(AwsKey.accessKey, AwsKey.secretKey);
-        var awsClient = new AmazonDynamoDBClient(credentials, RegionEndpoint.APNortheast1);
-
-        var context = new DynamoDBContext(awsClient);
-
-        var emailCode = new EmailCode
-        {
-            Email = email,
-            Code = code,
-            DateTime = DateTime.UtcNow,
-            Partition = "bedrock"
-        };
-
-        await context.SaveAsync(emailCode);
-
-        return true;
-    }
-
-    private static string GenerateRandomCode(int length)
-    {
-        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        Random random = new Random();
-        char[] codeChars = new char[length];
-
-        for (int i = 0; i < length; i++)
-        {
-            codeChars[i] = chars[random.Next(chars.Length)];
+            var html = ContentToHtml(content, userSetting.ShowDate);
+            builder.Append(html);
         }
 
-        return new string(codeChars);
+        return Content(builder.ToString(), "text/html");
     }
 
     [HttpPost]
@@ -498,6 +381,139 @@ public class HomeController : Controller
         return $"{doneCount}/{count}";
     }
 
+    public async Task<List<BedrockProject>> ReceiveProjects(string userId)
+    {
+        var conditions = new List<ScanCondition>
+        {
+            new("Partition", ScanOperator.Equal, "0"),
+            new("UserId", ScanOperator.Equal, userId),
+            new("IsArchive", ScanOperator.NotEqual, true)
+        };
+
+        var bedrockProjects = await AwsKey.Context.ScanAsync<BedrockProject>(conditions).GetRemainingAsync();
+
+        return bedrockProjects.ToList();
+    }
+
+
+    public async Task<BedrockProject> CreateProject(string userId, string projectName = "")
+    {
+        var projectId = Guid.NewGuid().ToString();
+
+        if (string.IsNullOrEmpty(projectName))
+            projectName = $"새로운 프로젝트-{projectId.Substring(0, 3)}";
+
+        var project = new BedrockProject()
+        {
+            Id = projectId,
+            UserId = userId,
+            Partition = "0",
+            Name = projectName,
+            CreateTick = DateTime.UtcNow.Ticks,
+            LastOpenTick = DateTime.UtcNow.Ticks,
+        };
+
+        await AwsKey.Context.SaveAsync(project);
+
+        return project;
+    }
+
+    public async Task<BedrockProject> GetProject(string projectId)
+    {
+        var project = await AwsKey.Context.LoadAsync<BedrockProject>("0", projectId);
+        return project;
+    }
+
+    public async Task<bool> SaveProject(BedrockProject project)
+    {
+        await AwsKey.Context.SaveAsync(project);
+        return true;
+    }
+
+
+    public string GetDeviceId()
+    {
+        var deviceId = HttpContext.Request.Cookies["deviceId"];
+        var version = HttpContext.Request.Cookies["version"];
+
+        if (version != "0.1")
+            return "";
+
+        return deviceId ?? "";
+    }
+
+    public async Task<string> GetEmailId(string userId)
+    {
+        var conditions = new List<ScanCondition>
+        {
+            new("UserId", ScanOperator.Equal, userId)
+        };
+
+        var emailIds = await AwsKey.Context.ScanAsync<BedrockEmailId>(conditions).GetRemainingAsync();
+
+        if (emailIds.Count == 0)
+            return string.Empty;
+
+        var emailId = emailIds.First();
+        return emailId.Id;
+    }
+
+    public async Task<bool> SendMail(string email)
+    {
+        var to = email;
+        var from = "\"Bedrock Team\" <app@studiouvu.com>";
+        var message = new MailMessage(from, to);
+
+        var code = GenerateRandomCode(4);
+
+        var mailbody = $"<div style='padding: 20px;'><img src=\"https://bedrock.es/images/bedrock.png\"/><p>아래의 코드를 입력해주세요.</p><h1>{code}</h1></div>";
+        message.Subject = "Bedrock 연동 인증 코드";
+        message.Body = mailbody;
+        message.Headers.Add("Sender", "Test");
+        message.BodyEncoding = Encoding.UTF8;
+        message.IsBodyHtml = true;
+
+        var client = new SmtpClient("smtp.gmail.com", 587); //Gmail smtp    
+        var basicCredential1 = new System.Net.NetworkCredential("app@studiouvu.com", "uwzt qfez aquv qwhm");
+
+        client.EnableSsl = true;
+        client.UseDefaultCredentials = false;
+        client.Credentials = basicCredential1;
+
+        await client.SendMailAsync(message);
+
+        var credentials = new BasicAWSCredentials(AwsKey.accessKey, AwsKey.secretKey);
+        var awsClient = new AmazonDynamoDBClient(credentials, RegionEndpoint.APNortheast1);
+
+        var context = new DynamoDBContext(awsClient);
+
+        var emailCode = new EmailCode
+        {
+            Email = email,
+            Code = code,
+            DateTime = DateTime.UtcNow,
+            Partition = "bedrock"
+        };
+
+        await context.SaveAsync(emailCode);
+
+        return true;
+    }
+
+    private static string GenerateRandomCode(int length)
+    {
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        Random random = new Random();
+        char[] codeChars = new char[length];
+
+        for (int i = 0; i < length; i++)
+        {
+            codeChars[i] = chars[random.Next(chars.Length)];
+        }
+
+        return new string(codeChars);
+    }
+
     public async Task<bool> VerifyCode(string email, string code)
     {
         code = code.ToUpper();
@@ -518,28 +534,11 @@ public class HomeController : Controller
         return result.Code == code;
     }
 
-    [HttpPost]
-    public async Task<string> ReceiveText([FromBody] DataModel model)
-    {
-        if (string.IsNullOrEmpty(model.Data))
-            return string.Empty;
-
-        var deviceId = GetDeviceId();
-        var userId = await GetUserId(deviceId);
-        var userSetting = await GetUserSetting(userId);
-
-        var content = await WriteContent(userSetting.CurrentProject, model.Data);
-
-        var html = ContentToHtml(content, userSetting.ShowDate);
-
-        return html;
-    }
-
     private async Task<BedrockUserSetting> GetUserSetting(string userId)
     {
         if (LocalDB.UserSettingDictionary.TryGetValue(userId, out var setting))
             return setting;
-        
+
         var userSetting = await AwsKey.Context.LoadAsync<BedrockUserSetting>("0", userId);
 
         if (userSetting == null)
@@ -556,7 +555,7 @@ public class HomeController : Controller
         }
 
         LocalDB.UserSettingDictionary.TryAdd(userId, userSetting);
-        
+
         return userSetting;
     }
 
@@ -625,55 +624,6 @@ public class HomeController : Controller
         return value;
     }
 
-    [HttpPost]
-    public async Task<IActionResult> ClickDone([FromBody] DataModel model)
-    {
-        var id = model.Data;
-
-        var content = await AwsKey.Context.LoadAsync<BedrockContent>("0", id);
-
-        if (content == null)
-            return NotFound("해당 아이템을 찾을 수 없습니다.");
-
-        content.Done = true;
-        content.DoneTick = DateTime.UtcNow.Ticks;
-
-        await AwsKey.Context.SaveAsync(content);
-
-        return await ReceiveFullContent();
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> ReceiveFullContent()
-    {
-        var deviceId = GetDeviceId();
-        var userId = await GetUserId(deviceId);
-        var userSetting = await GetUserSetting(userId);
-
-        var project = userSetting.CurrentProject;
-
-        var conditions = new List<ScanCondition>
-        {
-            new("Project", ScanOperator.Equal, project),
-            new("Done", ScanOperator.Equal, false),
-        };
-
-        var contents = await AwsKey.Context.ScanAsync<BedrockContent>(conditions).GetRemainingAsync();
-
-        if (contents.Count == 0)
-            return Content("");
-
-        StringBuilder builder = new();
-
-        foreach (var content in contents.OrderBy(content => content.Tick))
-        {
-            var html = ContentToHtml(content, userSetting.ShowDate);
-            builder.Append(html);
-        }
-
-        return Content(builder.ToString(), "text/html");
-    }
-
     private string ContentToHtml(BedrockContent content, bool showDate)
     {
         //todo! 최적화하기 , 클라에서 해당 정보 가지고 있도록
@@ -722,7 +672,7 @@ public class HomeController : Controller
     {
         if (LocalDB.UserIdDictionary.TryGetValue(id, out var userId))
             return userId;
-        
+
         var conditions = new List<ScanCondition>
         {
             new("Id", ScanOperator.Equal, id)
