@@ -137,6 +137,24 @@ public class HomeController : Controller
     }
 
     [HttpPost]
+    public async Task<bool> ReceiveSendProjectName([FromBody] DataModel model)
+    {
+        var deviceId = GetDeviceId();
+        var userId = await GetUserId(deviceId);
+        var userSetting = await GetUserSetting(userId);
+
+        var bedrockProject = await GetProject(userSetting.CurrentProject);
+
+        if (bedrockProject.Name == model.Data)
+            return true;
+        
+        bedrockProject.Name = model.Data;
+        await SaveProject(bedrockProject);
+
+        return true;
+    }
+
+    [HttpPost]
     public async Task<string> ReceiveLastProjectList()
     {
         var deviceId = GetDeviceId();
@@ -394,7 +412,6 @@ public class HomeController : Controller
 
         return bedrockProjects.ToList();
     }
-
 
     public async Task<BedrockProject> CreateProject(string userId, string projectName = "")
     {
