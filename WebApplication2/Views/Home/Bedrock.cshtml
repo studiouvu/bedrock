@@ -81,7 +81,7 @@
                             type="text"
                             style="height:100%"
                             placeholder=""
-                            value="New Project"
+                            value="-"
                             onfocusout="InputProjectName()"
                             onkeyup="InputProjectName()"/>
                     </div>
@@ -95,7 +95,7 @@
                             <font color="#919191" style="display: flex;">
                                 ✔️
                                 <div id="task-count">
-                                    --/--
+                                    -/-
                                 </div>
                             </font>
                         </div>
@@ -397,6 +397,13 @@
         let typped = document.getElementById('input1').value;
         document.getElementById('input1').value = '';
 
+        if (typped == "")
+        {
+            depth = 0;
+            $('#input-tab').html("");
+            return;
+        }
+
         fetch('@Url.Action("ReceiveText")', {
             method: 'POST',
             credentials: 'include', 
@@ -657,6 +664,8 @@
     function ChangeProject(projectId , projectName) {
         $('#tblContent').html("<div class='fade-in' style='opacity: 0; min-height: 100px; border-radius: 15px; background-color: #1b1c1c'></div>");
         document.getElementById('project-name').value = projectName;
+        depth = 0;
+        $('#input-tab').html("");
         
         fetch('@Url.Action("ReceiveChangeProject")', {
             method: 'POST',
