@@ -163,15 +163,21 @@ public class HomeController : Controller
 
         if (string.IsNullOrEmpty(bedrockProjectName))
         {
-            var emoji = new List<string>()
+            var emojiList = new List<string>()
             {
-                "🐔",
-                "🍗",
-                "🫎",
                 "🦄",
-                "🦐",
+                "🐯",
+                "🦊",
+                "🐮",
+                "🐻‍❄️",
+                "🐹",
+                "🏄",
+                "👹",
+                "🦝",
+                "🐧",
             };
-            bedrockProjectName = emoji[new Random().Next(0, emoji.Count)];
+            var emoji = emojiList[new Random().Next(0, emojiList.Count)];
+            bedrockProjectName = emoji;
         }
 
         if (bedrockProject.Name == bedrockProjectName)
@@ -446,7 +452,23 @@ public class HomeController : Controller
         var projectId = Guid.NewGuid().ToString();
 
         if (string.IsNullOrEmpty(projectName))
-            projectName = $"새로운 프로젝트-{projectId.Substring(0, 3)}";
+        {
+            var emoji = new List<string>()
+            {
+                "🦄",
+                "🐯",
+                "🦊",
+                "🐮",
+                "🐻‍❄️",
+                "🐹",
+                "🏄",
+                "👹",
+                "🦝",
+                "🐧",
+            };
+            var newEmoji = emoji[new Random().Next(0, emoji.Count)];
+            projectName = $"{newEmoji}{DateTime.Now:yy.MM.dd}"; //새로운 프로젝트-{projectId.Substring(0, 3)}
+        }
 
         var project = new BedrockProject()
         {
@@ -642,7 +664,8 @@ public class HomeController : Controller
         await WriteContent(secondProject.Id, "삼성 건조기");
         await WriteContent(secondProject.Id, "로지텍 키보드 mx keys");
 
-        var firstProject = await CreateProject(userId);
+        //todo! 지역별로 설정 필요
+        var firstProject = await CreateProject(userId , $"🦊{DateTime.Now:yy.MM.dd}");
 
         await WriteContent(firstProject.Id, "안녕하세요🥳 새로 오신 것을 환영합니다!");
         await WriteContent(firstProject.Id, "Bedrock은 가장 강력한 Todo 앱입니다.  \n자세한 건 이 [소개 글](https://bedrock.es/home/about)을 읽어주세요");
