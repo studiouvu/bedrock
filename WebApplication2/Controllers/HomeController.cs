@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Net.Mail;
 using System.Text;
 using Amazon;
@@ -76,7 +77,7 @@ public class HomeController : Controller
 
         return deviceId;
     }
-    
+
 
     [HttpPost]
     public async Task<bool> ReceiveCreateProject([FromBody] DataModel data)
@@ -94,7 +95,7 @@ public class HomeController : Controller
     }
 
     [HttpPost]
-    public async Task<string> ReceiveText([FromBody] DataModel model)
+    public async Task<string> ReceiveText([FromBody] ContentTextDataModel model)
     {
         if (string.IsNullOrEmpty(model.Data))
             return string.Empty;
@@ -103,7 +104,7 @@ public class HomeController : Controller
         var userId = await GetUserId(deviceId);
         var userSetting = await GetUserSetting(userId);
 
-        var content = await WriteContent(userSetting.CurrentProject, model.Data);
+        var content = await WriteContent(userSetting.CurrentProject, model.Data, model.Depth);
 
         var html = ContentToHtml(content, userSetting.ShowDate);
 
@@ -119,7 +120,6 @@ public class HomeController : Controller
 
         var projectId = data.Data;
         userSetting.CurrentProject = projectId;
-
         await SaveUserSetting(userSetting);
 
         var project = await GetProject(projectId);
@@ -203,7 +203,7 @@ public class HomeController : Controller
             var text = $"""
                             <div
                             class="click-color unselectable"
-                            onclick="ChangeProject('{project.Id}')"
+                            onclick="ChangeProject('{project.Id}','{project.Name}')"
                             style="cursor: pointer; height: 100%; background-color: #1f1f1f; padding: 6px 9px; border-radius: 10px; margin-right: 6px;">
                                   <div class="text-center">
                                       {project.Name}
@@ -233,7 +233,7 @@ public class HomeController : Controller
             var text = $"""
                             <div
                                 class="click-color unselectable"
-                               onclick="ChangeProject('{project.Id}')"
+                               onclick="ChangeProject('{project.Id}','{project.Name}')"
                                style="width:95%; display: inline-block; cursor: pointer; background-color: {backgroundColor}; border-radius: 10px; padding: 4px 8px;">
                                {project.Name}
                             </div>
@@ -638,24 +638,23 @@ public class HomeController : Controller
         var thirdProject = await CreateProject(userId, "Bedrock 아이디어");
 
         await WriteContent(thirdProject.Id, "device id 쿠키로 구현");
-        await WriteContent(thirdProject.Id, "uuid 4 사용하기");
+        await WriteContent(thirdProject.Id, "uuid 4 사용하기" , 1);
         await WriteContent(thirdProject.Id, "로그인 구현하기");
-        await WriteContent(thirdProject.Id, "이메일로 인증하게");
-        await WriteContent(thirdProject.Id, "이메일 발송 구현하기");
+        await WriteContent(thirdProject.Id, "이메일로 인증하게" , 1);
+        await WriteContent(thirdProject.Id, "이메일 발송 구현하기" , 2);
         await WriteContent(thirdProject.Id, "템플릿 프로젝트");
-        await WriteContent(thirdProject.Id, "사고 싶은 것");
-        await WriteContent(thirdProject.Id, "맥미니 넣자");
-        await WriteContent(thirdProject.Id, "Bedrock 아이디어");
+        await WriteContent(thirdProject.Id, "사고 싶은 것" , 1);
+        await WriteContent(thirdProject.Id, "맥미니 넣자" , 2);
+        await WriteContent(thirdProject.Id, "Bedrock 아이디어" , 1);
         await WriteContent(thirdProject.Id, "Parent Content 구현하기");
-        await WriteContent(thirdProject.Id, "Content 별로 div 따로 구현하기");
         await WriteContent(thirdProject.Id, "fetch로 각 content 수정할때 해당 부분만 변경되게");
         await WriteContent(thirdProject.Id, "체크처리 할때도 개별로 변경되게");
         await WriteContent(thirdProject.Id, "asp net Response Compression 적용하기");
         await WriteContent(thirdProject.Id, "프로젝트 폴더 구현하기");
-        await WriteContent(thirdProject.Id, "프로젝트 내 프로젝트 구현?");
-        await WriteContent(thirdProject.Id, "폴더처럼 작동해도 될 듯");
+        await WriteContent(thirdProject.Id, "프로젝트 내 프로젝트 구현?" , 1);
+        await WriteContent(thirdProject.Id, "폴더처럼 작동해도 될 듯" , 1);
         await WriteContent(thirdProject.Id, "콘텐츠 수정 기능 구현하기");
-        await WriteContent(thirdProject.Id, "클릭하면 input box로 변경되게");
+        await WriteContent(thirdProject.Id, "클릭하면 input box로 변경되게" , 1);
 
         var secondProject = await CreateProject(userId, "사고 싶은 것");
 
@@ -665,7 +664,7 @@ public class HomeController : Controller
         await WriteContent(secondProject.Id, "로지텍 키보드 mx keys");
 
         //todo! 지역별로 설정 필요
-        var firstProject = await CreateProject(userId , $"🦊{DateTime.Now:yy.MM.dd}");
+        var firstProject = await CreateProject(userId, $"🦊{DateTime.Now:yy.MM.dd}");
 
         await WriteContent(firstProject.Id, "안녕하세요🥳 새로 오신 것을 환영합니다!");
         await WriteContent(firstProject.Id, "Bedrock은 가장 강력한 Todo 앱입니다.  \n자세한 건 이 [소개 글](https://bedrock.es/home/about)을 읽어주세요");
@@ -674,7 +673,7 @@ public class HomeController : Controller
         return firstProject.Id;
     }
 
-    public async Task<BedrockContent> WriteContent(string projectId, string contentText)
+    public async Task<BedrockContent> WriteContent(string projectId, string contentText, int depth = 0)
     {
         contentText = contentText.Replace("<br>", "  \n");
 
@@ -686,6 +685,7 @@ public class HomeController : Controller
             Project = projectId,
             Done = false,
             Tick = DateTime.UtcNow.Ticks,
+            depth = depth,
         };
 
         await AwsKey.Context.SaveAsync(value);
@@ -704,28 +704,39 @@ public class HomeController : Controller
 
         var resultContent = new StringBuilder();
 
-        resultContent.Append($"<div >{contentText}</div>");
+        resultContent.Append($"<div>{contentText}</div>");
 
-        if (showDate)
+
+        var dateText = $"""
+                        <div class="hover click-color unselectable" style="border-radius: 5px; cursor: pointer; margin-left:6px; padding-right: 6px; padding-left: 6px;">
+                        <font color="#6c6c6c">
+                        작성
+                        {(fixedDateTime.Date != DateTime.Now.Date ?
+                            fixedDateTime.Date.Year == DateTime.Now.Year ?
+                                fixedDateTime.ToString("MM/dd", CultureInfo.InvariantCulture)
+                                : fixedDateTime.ToString("yy/MM/dd", CultureInfo.InvariantCulture)
+                            : $"{fixedDateTime:HH:mm}")}
+                        </font>
+                        </div>
+                        """;
+
+        resultContent.Append(dateText);
+
+        var tabText = "";
+
+        for (int i = 0; i < content.depth; i++)
         {
-            var dateText = $"""
-                            <div class="click-color unselectable" style="height:100%; border-radius: 5px; cursor: pointer; margin-left: auto; padding-right: 6px; padding-left: 6px;">
-                            <font color="#6c6c6c">
-                            {(fixedDateTime.Date != DateTime.Now.Date ? $"{fixedDateTime:MM.dd.yy}" : $"{fixedDateTime:HH:mm}")}
-                            </font>
-                            </div>
-                            """;
-
-            resultContent.Append(dateText);
+            tabText += "&nbsp;&nbsp;&nbsp;&nbsp;";
         }
 
         var text = $"""
-                    <div style="max-width: 100%;">
+                    <div id='{content.Id}' style="max-width: 100%;">
                         <div class="ob-box" onclick='' style="width=100%; cursor: text; background-color:transparent;">
                             <div style="width:100%; height:100%; align-items: center;">
                              <div style="width:100%; height:100%; display: flex;">
+                                 {tabText}
                                  <div class="click-animate unselectable" onclick="ClickDone('{content.Id}')" style="cursor: pointer; min-width: 18px; max-width:18px; min-height: 18px; max-height: 18px; border: solid #cdd0d4;  border-width:1px; margin-top: 3px; margin-right: 10px; border-radius: 5px;"></div>
-                                     <div style="display: flex; width:100%; border: none; outline: none;">
+                                     <div class="test" style="display: flex; width:100%; border: none; outline: none;">
                                      {resultContent}
                                      </div>
                                  </div>
@@ -781,9 +792,8 @@ public class HomeController : Controller
 
             var userSetting = await GetUserSetting(newUserId);
             userSetting.CurrentProject = firstProject;
-            userSetting.ShowDate = true;
             await SaveUserSetting(userSetting);
-            
+
             return newUserId;
         }
 

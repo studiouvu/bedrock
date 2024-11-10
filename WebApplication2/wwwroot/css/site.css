@@ -419,7 +419,7 @@ body {
 .input-box-holder {
     height: 42px;
     border-radius: 15px;
-    color:#ccc;
+    color: #ccc;
 }
 
 .ob-box {
@@ -431,19 +431,7 @@ body {
     border-radius: 15px;
 }
 
-@media (max-width: 1200px) {
-    .hide-on-small {
-        display: none;
-    }
-}
-
-@media (min-width: 1200px) {
-    .display-on-small {
-        display: none;
-    }
-}
-
-.scroll-hoizontal::-webkit-scrollbar{
+.scroll-hoizontal::-webkit-scrollbar {
     display: none;
 }
 
@@ -456,7 +444,7 @@ body {
     border-bottom: none;
     background: transparent;
     outline: none;
-    color:#ccc;
+    color: #ccc;
 }
 
 /* 스크롤 바 */
@@ -465,9 +453,11 @@ body {
     width: 10px;
     display: block;
 }
+
 ::-webkit-scrollbar-track, ::-webkit-scrollbar-button {
     display: none;
 }
+
 ::-webkit-scrollbar-thumb {
     background-color: #363636;
 }
@@ -496,23 +486,102 @@ body {
 
 .unselectable {
     -webkit-user-select: none; /* Chrome, Safari, Opera */
-    -moz-user-select: none;    /* Firefox */
-    -ms-user-select: none;     /* Internet Explorer/Edge */
-    user-select: none;         /* 표준 문법 */
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* Internet Explorer/Edge */
+    user-select: none; /* 표준 문법 */
 }
 
-.title-input {
-    font-weight: bold;
-    font-size: 40px;
 
-    padding: 0 0 8px;
+@media (max-width: 1000px) {
+    /*.hide-on-small */
+    .title-input {
+        font-size: 28px;
+        font-weight: 550;
+        padding: 0 0 8px;
 
-    width: 100%;
+        width: 100%;
+        height: 100%;
+        border-top: none;
+        border-left: none;
+        border-right: none;
+        border-bottom: none;
+        background: transparent;
+        outline: none;
+    }
+
+    .hide-on-small {
+        display: none;
+    }
+}
+
+@media (min-width: 1000px) {
+    /*.display-on-small {*/
+    .title-input {
+        font-weight: bold;
+        font-size: 40px;
+
+        padding: 0 0 8px;
+
+        width: 100%;
+        height: 100%;
+        border-top: none;
+        border-left: none;
+        border-right: none;
+        border-bottom: none;
+        background: transparent;
+        outline: none;
+    }
+
+    .display-on-small {
+        display: none;
+    }
+}
+
+.empty-div {
+    position: relative;
+}
+
+.empty-div::after {
+    content: "";
+    display: block;
     height: 100%;
-    border-top: none;
-    border-left: none;
-    border-right: none;
-    border-bottom: none;
-    background: transparent;
-    outline: none;
+}
+
+.hover-container {
+    position: relative;
+    display: inline-block;
+}
+
+.hover-container:hover .hover {
+    opacity: 1; /* 마우스를 올리면 툴팁 보임 */
+    visibility: visible; /* 마우스를 올리면 툴팁 보임 */
+}
+
+.hover {
+    /*position: absolute;*/
+    /*top: 50%; !* 부모 요소의 세로 중앙에 맞춤 *!*/
+    /*transform: translate(-150%, -50%); !* 왼쪽과 세로 중앙 정렬 *!*/
+    opacity: 0; /* 초기 투명도 */
+    visibility: hidden; /* 초기에는 숨김 */
+    transition: opacity 0.3s ease, visibility 0.3s ease; /* 부드러운 전환 효과 */
+}
+
+.fade-out {
+    transition: transform 0.4s ease, opacity 0.4s ease;
+    transform: translateX(6%); /* 오른쪽으로 밀어내기 */
+    opacity: 0;
+}
+
+.fade-in {
+    opacity: 0;
+    animation: fadeIn 1s ease forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }

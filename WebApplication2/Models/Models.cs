@@ -7,6 +7,14 @@ public class DataModel
     public string Content { get; set; }
 }
 
+public class ContentTextDataModel
+{
+    public string Data { get; set; }
+    public string DeviceId { get; set; }
+    public string Content { get; set; }
+    public int Depth { get; set; }
+}
+
 public class BedrockContent
 {
     public string Partition;
@@ -17,6 +25,7 @@ public class BedrockContent
     public bool Done;
     public long Tick;
     public long DoneTick;
+    public int depth;
 }
 
 public class BedrockProject
