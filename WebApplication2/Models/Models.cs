@@ -68,6 +68,7 @@ public class BedrockUserSetting
     public string UserId;
     public string Partition;
     public bool ShowDate;
+    public bool ShowDoneTask;
     public string CurrentProject;
 }
 

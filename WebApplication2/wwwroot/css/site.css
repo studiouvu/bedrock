@@ -554,16 +554,13 @@ body {
 
 .hover-container:hover .hover {
     opacity: 1; /* 마우스를 올리면 툴팁 보임 */
-    visibility: visible; /* 마우스를 올리면 툴팁 보임 */
+    display: block;
 }
 
 .hover {
-    /*position: absolute;*/
-    /*top: 50%; !* 부모 요소의 세로 중앙에 맞춤 *!*/
-    /*transform: translate(-150%, -50%); !* 왼쪽과 세로 중앙 정렬 *!*/
-    opacity: 0; /* 초기 투명도 */
-    visibility: hidden; /* 초기에는 숨김 */
-    transition: opacity 0.3s ease, visibility 0.3s ease; /* 부드러운 전환 효과 */
+    display: none;
+    opacity: 0;
+    animation: fadeIn 0.3s ease forwards;
 }
 
 .fade-out {
@@ -598,4 +595,8 @@ body {
     to {
         opacity: 1;
     }
+}
+
+.done-text {
+ color: #6c6c6c;
 }

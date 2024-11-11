@@ -107,6 +107,7 @@
                 </div>
                 <div style="border: none; outline: none; padding-bottom: 4px; display: flex;">
                     <div
+                        onclick="ShowDoneTask()"
                         class="click-color unselectable"
                         style="cursor: pointer; height: 100%; border-radius: 10px; padding: 4px;">
                         <div
@@ -389,7 +390,17 @@
             });
     }
 
-    function ClickDone(id) {
+    function ClickDone(id , destroy) {
+        const element = document.getElementById(id);
+        element.classList.add('fade-out'); // 투명해지도록 클래스 추가
+
+        if (destroy == 'true')
+        {
+            setTimeout(() => {
+                element.remove();
+            }, 500); // 1000ms = 1초
+        }
+    
         fetch('@Url.Action("ClickDone")', {
             method: 'POST',
             credentials: 'include', 
@@ -405,18 +416,40 @@
             return response.text();
         })
         .then(data => {
-            const element = document.getElementById(id);
-            
-            element.classList.add('fade-out'); // 투명해지도록 클래스 추가
-            
-            setTimeout(() => {
-                element.remove();
-            }, 500); // 1000ms = 1초
             GetTaskCount();
+            if (destroy == 'false')
+            {
+                setTimeout(() => {
+                    ReceiveFullContent();
+                }, 500); // 1000ms = 1초
+            }
         })
         .catch(error => {
             $('#tblContent').html("fail");
         });
+    }
+
+    function ClickRecover(id) {
+        fetch('@Url.Action("ClickDone")', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json; charset=utf-8'
+            },
+            body: JSON.stringify({ data: id })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('네트워크 응답에 문제가 있습니다.');
+                }
+                return response.text();
+            })
+            .then(data => {
+                ReceiveFullContent();
+            })
+            .catch(error => {
+                $('#tblContent').html("fail");
+            });
     }
 
     function SendInputForce() {
@@ -587,6 +620,23 @@
         .catch(error => {
             $('#tblContent').html("fail");
         });
+    }
+
+    function ShowDoneTask() {
+        fetch('@Url.Action("ReceiveShowDoneTask")', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json; charset=utf-8'
+            },
+            body: JSON.stringify({ deviceId: deviceId })
+        })
+            .then(data => {
+                ReceiveFullContent();
+            })
+            .catch(error => {
+                $('#tblContent').html("fail");
+            });
     }
 
     function GetTaskCount() {

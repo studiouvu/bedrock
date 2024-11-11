@@ -106,7 +106,7 @@ public class HomeController : Controller
 
         var content = await WriteContent(userId, userSetting.CurrentProject, model.Data, model.Depth);
 
-        var html = ContentToHtml(content);
+        var html = ContentToHtml(content, userSetting.ShowDoneTask);
 
         return html;
     }
@@ -264,7 +264,7 @@ public class HomeController : Controller
         if (content == null)
             return false;
 
-        content.Done = true;
+        content.Done = !content.Done;
         content.DoneTick = DateTime.UtcNow.Ticks;
 
         await AwsKey.Context.SaveAsync(content);
@@ -286,7 +286,7 @@ public class HomeController : Controller
 
         var filter = new QueryFilter("Project", QueryOperator.Equal, project);
         filter.AddCondition("Partition", QueryOperator.Equal, "0");
-        
+
         var query = new QueryOperationConfig
         {
             IndexName = "Partition-Project-index",
@@ -300,10 +300,26 @@ public class HomeController : Controller
 
         StringBuilder builder = new();
 
-        foreach (var content in contents.Where(content => content.Done == false).OrderBy(content => content.Tick))
+        if (!userSetting.ShowDoneTask)
+            contents = contents.Where(content => content.Done == false).ToList();
+
+        foreach (var content in contents.Where(content => !content.Done).OrderBy(content => content.Tick))
         {
-            var html = ContentToHtml(content);
+            var html = ContentToHtml(content, userSetting.ShowDoneTask);
             builder.Append(html);
+        }
+
+        if (userSetting.ShowDoneTask && contents.Any(content => content.Done))
+        {
+            builder.Append("<div style='min-height:6px; width:100%;'></div>");
+            builder.Append("<div style='min-height:1px; width:100%; background-color:#1f1f1f;'></div>");
+            // builder.Append("<font color=\"#6c6c6c\">Completed</font>");
+
+            foreach (var content in contents.Where(content => content.Done).OrderBy(content => -content.DoneTick))
+            {
+                var html = ContentToHtml(content, userSetting.ShowDoneTask);
+                builder.Append(html);
+            }
         }
 
         UpdateGptContent(userId);
@@ -542,6 +558,20 @@ public class HomeController : Controller
         var userSetting = await GetUserSetting(userId);
 
         userSetting.ShowDate = !userSetting.ShowDate;
+
+        await AwsKey.Context.SaveAsync(userSetting);
+
+        return true;
+    }
+
+    [HttpPost]
+    public async Task<bool> ReceiveShowDoneTask([FromBody] DataModel data)
+    {
+        var deviceId = data.DeviceId;
+        var userId = await GetUserId(deviceId);
+        var userSetting = await GetUserSetting(userId);
+
+        userSetting.ShowDoneTask = !userSetting.ShowDoneTask;
 
         await AwsKey.Context.SaveAsync(userSetting);
 
@@ -830,7 +860,7 @@ public class HomeController : Controller
         return value;
     }
 
-    private string ContentToHtml(BedrockContent content)
+    private string ContentToHtml(BedrockContent content, bool showDoneTask)
     {
         //todo! 최적화하기 , 클라에서 해당 정보 가지고 있도록
         var dateTime = DateTime.MinValue.AddTicks(content.Tick);
@@ -841,8 +871,7 @@ public class HomeController : Controller
 
         var resultContent = new StringBuilder();
 
-        resultContent.Append($"<div>{contentText}</div>");
-
+        resultContent.Append($"{contentText}");
 
         var dateText = $"""
                         <div class="hover click-color unselectable" style="border-radius: 5px; cursor: pointer; margin-left:6px; padding-right: 6px; padding-left: 6px;">
@@ -857,8 +886,6 @@ public class HomeController : Controller
                         </div>
                         """;
 
-        resultContent.Append(dateText);
-
         var tabText = "";
 
         for (int i = 0; i < content.depth; i++)
@@ -866,15 +893,35 @@ public class HomeController : Controller
             tabText += "&nbsp;&nbsp;&nbsp;&nbsp;";
         }
 
+        var checkBoxDiv = content.Done ?
+            $"""
+             <div class="click-animate unselectable" onclick="ClickRecover('{content.Id}')" 
+               style="cursor: pointer; min-width: 18px; max-width:18px; min-height: 18px; max-height: 18px;
+                margin-right: 10px;">
+                ✅
+                </div>
+             """
+            :
+            $"""
+             <div class="click-animate unselectable" onclick="ClickDone('{content.Id}','{(showDoneTask ? "false" : "true")}')" 
+               style="cursor: pointer; min-width: 18px; max-width:18px; min-height: 18px; max-height: 18px;
+                margin-right: 10px; border: solid #cdd0d4; border-width:1px; margin-top: 3px; border-radius: 5px; ">
+                </div>
+             """;
+
+        if (content.Done)
+            resultContent = new StringBuilder($"<span style=\"color:#6c6c6c; display:inline;\">{resultContent}</span>");
+
         var text = $"""
                     <div id='{content.Id}' style="max-width: 100%;">
                         <div class="ob-box" onclick='' style="width=100%; cursor: text; background-color:transparent;">
                             <div style="width:100%; height:100%; align-items: center;">
                              <div style="width:100%; height:100%; display: flex;">
                                  {tabText}
-                                 <div class="click-animate unselectable" onclick="ClickDone('{content.Id}')" style="cursor: pointer; min-width: 18px; max-width:18px; min-height: 18px; max-height: 18px; border: solid #cdd0d4;  border-width:1px; margin-top: 3px; margin-right: 10px; border-radius: 5px;"></div>
+                                 {checkBoxDiv}
                                      <div class="hover-container" style="display: flex; width:100%; border: none; outline: none;">
                                      {resultContent}
+                                     {dateText}
                                      </div>
                                  </div>
                             </div>
