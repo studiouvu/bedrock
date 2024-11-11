@@ -281,12 +281,19 @@ public class HomeController : Controller
 
         var project = userSetting.CurrentProject;
 
-        var conditions = new List<ScanCondition>
+        // 보조 인덱스 이름 설정
+        var indexName = "Partition-Project-index";
+
+        var filter = new QueryFilter("Project", QueryOperator.Equal, project);
+        filter.AddCondition("Partition", QueryOperator.Equal, "0");
+        
+        var query = new QueryOperationConfig
         {
-            new("Project", ScanOperator.Equal, project),
+            IndexName = "Partition-Project-index",
+            Filter = filter,
         };
 
-        var contents = await AwsKey.Context.ScanAsync<BedrockContent>(conditions).GetRemainingAsync();
+        var contents = await AwsKey.Context.FromQueryAsync<BedrockContent>(query).GetRemainingAsync();
 
         if (contents.Count == 0)
             return Content("");
@@ -382,7 +389,7 @@ public class HomeController : Controller
 
         foreach (var project in projects)
         {
-            builder.Append($"(Project Name: {project.Name} Contents: ");
+            builder.Append($"(Project Name: {project.Name}, Contents: ");
 
             var contents = userContents.Where(content => content.Project == project.Id);
 
