@@ -70,3 +70,11 @@ public class BedrockUserSetting
     public bool ShowDate;
     public string CurrentProject;
 }
+
+public class BedrockSecretary
+{
+    public string UserId;
+    public string Partition;
+    public string Content;
+    public long lastUpdateTick;
+}

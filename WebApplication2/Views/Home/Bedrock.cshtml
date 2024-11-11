@@ -45,16 +45,16 @@
             </div>
         </div>
     </div>
-    @* <div *@
-    @*     class="click-color unselectable" *@
-    @*     onclick="ShowDate()" *@
-    @*     style="position: fixed; cursor: pointer; padding: 5px; background-color: #1f1f1f; border-radius: 10px; right: 10px; bottom: 10px;"> *@
-    @*     <div class="text-center"> *@
-    @*         <font color="#919191"> *@
-    @*             🗓️ *@
-    @*         </font> *@
-    @*     </div> *@
-    @* </div> *@
+    <div
+        class="click-color unselectable display-on-small"
+        onclick="GetGPT()"
+        style="position: fixed; cursor: pointer; padding: 5px; background-color: #1f1f1f; border-radius: 10px; right: 10px; bottom: 10px;">
+        <div class="text-center">
+            <font color="#919191">
+                🐰
+            </font>
+        </div>
+    </div>
     <div class="container" style="padding-top: 5px; margin-bottom: 200px; min-height: 600px; ">
         <div
             style="width: 100%; max-width: 600px; margin-left: auto; margin-right: auto; border-radius: 10px;">
@@ -294,6 +294,11 @@
     }
 
     function ReceiveFullContent() {
+        const elements = document.querySelectorAll('.input-hide');
+        elements.forEach(element => {
+            element.style.display = 'block';
+        });
+        
         ReceiveContent();
         GetTaskCount();
         ReceiveProjectName();
@@ -684,11 +689,6 @@
         depth = 0;
         $('#input-tab').html("");
         scrollToTop();
-
-        const elements = document.querySelectorAll('.input-hide');
-        elements.forEach(element => {
-            element.style.display = 'block';
-        });
         
         fetch('@Url.Action("ReceiveChangeProject")', {
             method: 'POST',
@@ -750,10 +750,11 @@
         });
         
         $('#tblContent').html("<div class='fade-in-long' style='opacity: 0; min-height: 300px; border-radius: 15px; background-color: #1b1c1c'></div>");
-        $('#task-count').html("o1-preview 사용으로 60초 정도의 시간이 소요됩니다.");
+        $('#task-count').html("1시간마다 자동으로 업데이트됩니다.");
         
         document.getElementById('project-name').value = "🐰Secretary";
         depth = 0;
+        document.title = "🐰Secretary - Bedrock";
         
         $('#input-tab').html("");
     
