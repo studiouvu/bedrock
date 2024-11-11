@@ -26,6 +26,7 @@ public class BedrockContent
     public long Tick;
     public long DoneTick;
     public int depth;
+    public string UserId;
 }
 
 public class BedrockProject

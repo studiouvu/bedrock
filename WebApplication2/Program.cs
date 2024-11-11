@@ -3,7 +3,9 @@ using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DataModel;
 using Amazon.Runtime;
 using Bedrock;
+using Bedrock.Controllers;
 using Microsoft.AspNetCore.ResponseCompression;
+using OpenAI.Chat;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -27,6 +29,8 @@ builder.Services.AddSession(options =>
     options.IdleTimeout = TimeSpan.FromMinutes(20);
     options.Cookie.IsEssential = true; // GDPR 등의 이유로 필요
 });
+
+OpenAiControl.Initialize();
 
 var credentials = new BasicAWSCredentials(AwsKey.accessKey, AwsKey.secretKey);
 AwsKey.Client = new AmazonDynamoDBClient(credentials, RegionEndpoint.APNortheast1);

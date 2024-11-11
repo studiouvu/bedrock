@@ -3,20 +3,24 @@
     <div class="hide-on-small">
         <div id="floating"
              style="
-         position: fixed;
-         left : 14px;
-         top: 0px;
-         width: 250px;
-         height: 100%;
-          margin-left: auto; margin-right: auto; ">
-            <div style="margin-bottom: 50px; margin-top: 20px;">
+                 position: fixed;
+                 left : 14px;
+                 top: 0px;
+                 width: 250px;
+                 height: 100%;
+                 float: left;
+                 flex-direction: column;
+                  display: flex;
+                  margin-left: auto; 
+                  margin-right: auto; ">
+            <div style="margin-top: 20px;">
                 <img
                     onclick="PageReload()"
                     class="click-animate unselectable"
                     src="~/images/AppIconTrans.png"
                     style="cursor: pointer; height:22px; margin-left: 5px;">
             </div>
-            <div id="project-list" class="scroll-vertical" style="overflow-y: auto; max-height: 700px; white-space: nowrap; width: 100%;">
+            <div id="project-list" class="scroll-vertical" style="margin-top: 50px; flex: none; overflow-y: auto; max-height: 700px; white-space: nowrap; width: 100%;">
                 <div
                     style="cursor: pointer; margin: 0px; background-color: #1f1f1f; border-radius: 10px; padding: 4px 8px;">
                     -
@@ -25,8 +29,19 @@
             <div
                 onclick="CreateNewProject()"
                 class="click-color unselectable"
-                style="float:left; cursor: pointer; width: 128px; margin-left: auto; margin-right: auto; margin-top: 10px; background-color: #1f1f1f; border-radius: 10px; padding: 4px 8px;">
+                style="float:left; cursor: pointer; width: 128px; margin-top: 10px; background-color: #1f1f1f; border-radius: 10px; padding: 4px 8px;">
                 <div class="text-center">+</div>
+            </div>
+            <div
+                class="click-color unselectable"
+                onclick="GetGPT()"
+                style="width: 100%; height: 32px; margin-top: auto; cursor: pointer; border-radius: 10px; padding: 4px 8px;">
+                🐰Secretary
+            </div>
+            <div
+                class="click-color unselectable"
+                style="width: 100%; height: 32px; margin-bottom: 14px; cursor: pointer; border-radius: 10px; padding: 4px 8px;">
+                <font color="#919191">About Bedrock</font>
             </div>
         </div>
     </div>
@@ -107,24 +122,26 @@
                     </div>
                     <div style="min-height: 4px;">
                     </div>
-                    <div style="max-width: 100%; min-height: 42px; display: flex; align-items: center;">
-                        <div id="input-tab" style="height: 100%;"></div>
-                        <div
-                            class="click-animate unselectable"
-                            style="cursor: pointer; min-width: 18px; min-height: 18px; border: solid #cdd0d4;  border-width:1px; margin-right: 4px; border-radius: 5px;">
-                        </div>
-                        <div class="input-box-holder" style="display: flex; align-items: center; width: 100%; background: #1b1c1c; overflow-wrap: break-word;">
-                            <div style="width: 100%; height: 100%; margin-left: 5px; margin-right: 5px;">
-                                <input class="input-box" id="input1" type="text" placeholder="> ..." onKeyDown="SendInput(event)"/>
+                    <div class="input-hide">
+                        <div style="max-width: 100%; min-height: 42px; display: flex; align-items: center;">
+                            <div id="input-tab" style="height: 100%;"></div>
+                            <div
+                                class="click-animate unselectable"
+                                style="cursor: pointer; min-width: 18px; min-height: 18px; border: solid #cdd0d4;  border-width:1px; margin-right: 4px; border-radius: 5px;">
                             </div>
-                        </div>
-                        <div
-                            class="click-color unselectable input-box-holder"
-                            onclick="SendInputForce()"
-                            style="cursor: pointer; min-width: 42px; min-height: 42px; display: flex; align-items: center; background: #1b1c1c;
+                            <div class="input-box-holder" style="display: flex; align-items: center; width: 100%; background: #1b1c1c; overflow-wrap: break-word;">
+                                <div style="width: 100%; height: 100%; margin-left: 5px; margin-right: 5px;">
+                                    <input class="input-box" id="input1" type="text" placeholder="> ..." onKeyDown="SendInput(event)"/>
+                                </div>
+                            </div>
+                            <div
+                                class="click-color unselectable input-box-holder"
+                                onclick="SendInputForce()"
+                                style="cursor: pointer; min-width: 42px; min-height: 42px; display: flex; align-items: center; background: #1b1c1c;
                              padding: 5px; margin-left: 5px; ">
-                            <div class="text-center" style="width: 100%; align-items: center;">
-                                →
+                                <div class="text-center" style="width: 100%; align-items: center;">
+                                    →
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -175,7 +192,7 @@
     </div>
 
     <div
-        class="click-color unselectable"
+        class="click-color unselectable input-hide"
         onclick="CurrentProjectArchive()"
         style="cursor: pointer; background-color: #1f1f1f; max-width: 140px; margin-top: 50px; margin-left: auto; margin-right: auto; padding: 5px; border-radius: 10px;">
         <div class="text-center" style="width: 100%; align-items: center;">
@@ -666,6 +683,12 @@
         document.getElementById('project-name').value = projectName;
         depth = 0;
         $('#input-tab').html("");
+        scrollToTop();
+
+        const elements = document.querySelectorAll('.input-hide');
+        elements.forEach(element => {
+            element.style.display = 'block';
+        });
         
         fetch('@Url.Action("ReceiveChangeProject")', {
             method: 'POST',
@@ -692,6 +715,8 @@
     }
 
     function CurrentProjectArchive(projectId) {
+        scrollToTop();
+
         fetch('@Url.Action("ReceiveCurrentProjectArchive")', {
             method: 'POST',
             credentials: 'include', 
@@ -710,11 +735,51 @@
             })
             .then(data => {
                 ReceiveFullContent();
-                scrollToTop();
             })
             .catch(error => {
                 $('#last-projects').html("fail");
             });
+    }
+
+    function GetGPT() {
+        scrollToTop();
+
+        const elements = document.querySelectorAll('.input-hide');
+        elements.forEach(element => {
+            element.style.display = 'none';
+        });
+        
+        $('#tblContent').html("<div class='fade-in-long' style='opacity: 0; min-height: 300px; border-radius: 15px; background-color: #1b1c1c'></div>");
+        $('#task-count').html("o1-preview 사용으로 60초 정도의 시간이 소요됩니다.");
+        
+        document.getElementById('project-name').value = "🐰Secretary";
+        depth = 0;
+        
+        $('#input-tab').html("");
+    
+        fetch('@Url.Action("ReceiveGptContent")', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json; charset=utf-8'
+            },
+            body: JSON.stringify({
+                deviceId: deviceId})
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('네트워크 응답에 문제가 있습니다.');
+            }
+            return response.text();
+        })
+        .then(data => {
+            $('#tblContent').html(data);
+            GetLastProjects();
+            GetProjectList();
+        })
+        .catch(error => {
+            $('#last-projects').html("fail");
+        });
     }
 
     function PageReload() {

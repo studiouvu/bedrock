@@ -577,9 +577,23 @@ body {
     animation: fadeIn 1s ease forwards;
 }
 
+.fade-in-long {
+    opacity: 0;
+    animation: fadeIn 60s ease forwards;
+}
+
+@keyframes fadeSize {
+    from {
+        width: 0;
+    }
+    to {
+        width: 100%;
+    }
+}
+
 @keyframes fadeIn {
     from {
-        opacity: 0;
+        opacity: 0.1;
     }
     to {
         opacity: 1;

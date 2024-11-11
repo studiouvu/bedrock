@@ -104,9 +104,9 @@ public class HomeController : Controller
         var userId = await GetUserId(deviceId);
         var userSetting = await GetUserSetting(userId);
 
-        var content = await WriteContent(userSetting.CurrentProject, model.Data, model.Depth);
+        var content = await WriteContent(userId, userSetting.CurrentProject, model.Data, model.Depth);
 
-        var html = ContentToHtml(content, userSetting.ShowDate);
+        var html = ContentToHtml(content);
 
         return html;
     }
@@ -123,6 +123,10 @@ public class HomeController : Controller
         await SaveUserSetting(userSetting);
 
         var project = await GetProject(projectId);
+
+        if (project == null)
+            return false;
+
         project.LastOpenTick = DateTime.UtcNow.Ticks;
         await SaveProject(project);
 
@@ -234,10 +238,9 @@ public class HomeController : Controller
                             <div
                                 class="click-color unselectable"
                                onclick="ChangeProject('{project.Id}','{project.Name}')"
-                               style="width:95%; display: inline-block; cursor: pointer; background-color: {backgroundColor}; border-radius: 10px; padding: 4px 8px;">
+                               style="width:95%; cursor: pointer; background-color: {backgroundColor}; border-radius: 10px; padding: 4px 8px;">
                                {project.Name}
                             </div>
-                            <br>
                         """;
             builder.Append(text);
         }
@@ -287,11 +290,74 @@ public class HomeController : Controller
 
         foreach (var content in contents.OrderBy(content => content.Tick))
         {
-            var html = ContentToHtml(content, userSetting.ShowDate);
+            var html = ContentToHtml(content);
             builder.Append(html);
         }
 
         return Content(builder.ToString(), "text/html");
+    }
+
+    [HttpPost]
+    public async Task<string> ReceiveGptContent([FromBody] DataModel model)
+    {
+        var deviceId = model.DeviceId;
+        var userId = await GetUserId(deviceId);
+
+        var emailId = await GetEmailId(userId);
+
+        var isLogin = string.IsNullOrEmpty(emailId) == false;
+
+        if (!isLogin)
+            return "로그인이 필요합니다";
+
+        await ReceiveChangeProject(new DataModel()
+        {
+            DeviceId = model.DeviceId,
+            Data = "-",
+        });
+
+        var projectList = await ReceiveProjects(userId);
+        var projects = projectList.OrderByDescending(p => p.LastOpenTick);
+
+        StringBuilder builder = new();
+
+        var conditions = new List<ScanCondition>
+        {
+            new("UserId", ScanOperator.Equal, userId),
+        };
+
+        var userContents = await AwsKey.Context.ScanAsync<BedrockContent>(conditions).GetRemainingAsync();
+
+        foreach (var project in projects)
+        {
+            builder.Append($"(Project Name: {project.Name} Contents: ");
+
+            var contents = userContents.Where(content => content.Project == project.Id);
+
+            foreach (var content in contents.OrderBy(content => content.Tick))
+            {
+                var dateTime = DateTime.MinValue.AddTicks(content.Tick);
+                var timeSpan = DateTime.Now - DateTime.UtcNow;
+                var fixedDateTime = dateTime.Add(timeSpan);
+
+                var t = $"(Done: {content.Done} , CreateTime: {fixedDateTime:yy-MM-dd} , Content: {content.Text}), Depth: {content.depth} ),";
+                builder.Append(t);
+            }
+
+            builder.Append($")\n");
+        }
+
+        var originText = $"오늘은 {DateTime.Now:yy-MM-dd}일이야, 너가 생각하기에 중요한 순서대로 해야 할 일을 정리해서 10개를 뽑아줘, 그리고 각각 그 이유도 같이 붙여줘 , 한국어로 , Depth는 상단의 Task의 Depth보다 높을 경우 그 task의 하위 task라는 것을 뜻해 , 각 할일의 제목 옆에 프로젝트 이름을 붙여주고 1. 태스크 이름 (프로젝트 이름) 이런식으로 그리고 이유를 줄 바꿔서 밑에 써주고 , 답변에서 잡소리는 빼고,";
+        var example = "예시 : 1. **내일 예정된 영남님과의 약속 준비하기 (화요일)**  \n   - 내일 있을 중요한 약속이므로 즉시 준비해야 합니다.";
+        var queryText = originText + example + builder;
+
+        var resultText = "### 오늘의 할 일  \n";
+        var gptText = await OpenAiControl.GetChat(queryText);
+        resultText += gptText;
+
+        var contentText = Markdown.ToHtml(resultText).Replace("<p>", "").Replace("</p>", "");
+
+        return contentText;
     }
 
     [HttpPost]
@@ -637,43 +703,43 @@ public class HomeController : Controller
     {
         var thirdProject = await CreateProject(userId, "Bedrock 아이디어");
 
-        await WriteContent(thirdProject.Id, "device id 쿠키로 구현");
-        await WriteContent(thirdProject.Id, "uuid 4 사용하기" , 1);
-        await WriteContent(thirdProject.Id, "로그인 구현하기");
-        await WriteContent(thirdProject.Id, "이메일로 인증하게" , 1);
-        await WriteContent(thirdProject.Id, "이메일 발송 구현하기" , 2);
-        await WriteContent(thirdProject.Id, "템플릿 프로젝트");
-        await WriteContent(thirdProject.Id, "사고 싶은 것" , 1);
-        await WriteContent(thirdProject.Id, "맥미니 넣자" , 2);
-        await WriteContent(thirdProject.Id, "Bedrock 아이디어" , 1);
-        await WriteContent(thirdProject.Id, "Parent Content 구현하기");
-        await WriteContent(thirdProject.Id, "fetch로 각 content 수정할때 해당 부분만 변경되게");
-        await WriteContent(thirdProject.Id, "체크처리 할때도 개별로 변경되게");
-        await WriteContent(thirdProject.Id, "asp net Response Compression 적용하기");
-        await WriteContent(thirdProject.Id, "프로젝트 폴더 구현하기");
-        await WriteContent(thirdProject.Id, "프로젝트 내 프로젝트 구현?" , 1);
-        await WriteContent(thirdProject.Id, "폴더처럼 작동해도 될 듯" , 1);
-        await WriteContent(thirdProject.Id, "콘텐츠 수정 기능 구현하기");
-        await WriteContent(thirdProject.Id, "클릭하면 input box로 변경되게" , 1);
+        await WriteContent(userId, thirdProject.Id, "device id 쿠키로 구현");
+        await WriteContent(userId, thirdProject.Id, "uuid 4 사용하기", 1);
+        await WriteContent(userId, thirdProject.Id, "로그인 구현하기");
+        await WriteContent(userId, thirdProject.Id, "이메일로 인증하게", 1);
+        await WriteContent(userId, thirdProject.Id, "이메일 발송 구현하기", 2);
+        await WriteContent(userId, thirdProject.Id, "템플릿 프로젝트");
+        await WriteContent(userId, thirdProject.Id, "사고 싶은 것", 1);
+        await WriteContent(userId, thirdProject.Id, "맥미니 넣자", 2);
+        await WriteContent(userId, thirdProject.Id, "Bedrock 아이디어", 1);
+        await WriteContent(userId, thirdProject.Id, "Parent Content 구현하기");
+        await WriteContent(userId, thirdProject.Id, "fetch로 각 content 수정할때 해당 부분만 변경되게");
+        await WriteContent(userId, thirdProject.Id, "체크처리 할때도 개별로 변경되게");
+        await WriteContent(userId, thirdProject.Id, "asp net Response Compression 적용하기");
+        await WriteContent(userId, thirdProject.Id, "프로젝트 폴더 구현하기");
+        await WriteContent(userId, thirdProject.Id, "프로젝트 내 프로젝트 구현?", 1);
+        await WriteContent(userId, thirdProject.Id, "폴더처럼 작동해도 될 듯", 1);
+        await WriteContent(userId, thirdProject.Id, "콘텐츠 수정 기능 구현하기");
+        await WriteContent(userId, thirdProject.Id, "클릭하면 input box로 변경되게", 1);
 
         var secondProject = await CreateProject(userId, "사고 싶은 것");
 
-        await WriteContent(secondProject.Id, "에어팟 맥스");
-        await WriteContent(secondProject.Id, "맥미니 m4");
-        await WriteContent(secondProject.Id, "삼성 건조기");
-        await WriteContent(secondProject.Id, "로지텍 키보드 mx keys");
+        await WriteContent(userId, secondProject.Id, "에어팟 맥스");
+        await WriteContent(userId, secondProject.Id, "맥미니 m4");
+        await WriteContent(userId, secondProject.Id, "삼성 건조기");
+        await WriteContent(userId, secondProject.Id, "로지텍 키보드 mx keys");
 
         //todo! 지역별로 설정 필요
         var firstProject = await CreateProject(userId, $"🦊{DateTime.Now:yy.MM.dd}");
 
-        await WriteContent(firstProject.Id, "안녕하세요🥳 새로 오신 것을 환영합니다!");
-        await WriteContent(firstProject.Id, "Bedrock은 가장 강력한 Todo 앱입니다.  \n자세한 건 이 [소개 글](https://bedrock.es/home/about)을 읽어주세요");
+        await WriteContent(userId, firstProject.Id, "안녕하세요🥳 새로 오신 것을 환영합니다!");
+        await WriteContent(userId, firstProject.Id, "Bedrock은 가장 강력한 Todo 앱입니다.  \n자세한 건 이 [소개 글](https://bedrock.es/home/about)을 읽어주세요");
         // await WriteContent(firstProject.Id, "Bedrock은 가장 강력한 Todo 앱입니다.  \n- **종단 간 암호화**로 완전한 보안  \n*(당신 외에 누구도 이 글을 읽을 수 없습니다)*  \n- **MarkDown** 문법 지원  \n- **완전한 동기화** *웹 , 안드로이드 , 아이폰 어디서든 사용하세요*  \n- **오픈 소스** *(우리는 절대로 죽지 않습니다!)*  \n  \n자세한 건 이 [소개 글](https://bedrock.es/home/about)을 읽어주세요");
 
         return firstProject.Id;
     }
 
-    public async Task<BedrockContent> WriteContent(string projectId, string contentText, int depth = 0)
+    public async Task<BedrockContent> WriteContent(string userId, string projectId, string contentText, int depth = 0)
     {
         contentText = contentText.Replace("<br>", "  \n");
 
@@ -686,6 +752,7 @@ public class HomeController : Controller
             Done = false,
             Tick = DateTime.UtcNow.Ticks,
             depth = depth,
+            UserId = userId,
         };
 
         await AwsKey.Context.SaveAsync(value);
@@ -693,7 +760,7 @@ public class HomeController : Controller
         return value;
     }
 
-    private string ContentToHtml(BedrockContent content, bool showDate)
+    private string ContentToHtml(BedrockContent content)
     {
         //todo! 최적화하기 , 클라에서 해당 정보 가지고 있도록
         var dateTime = DateTime.MinValue.AddTicks(content.Tick);
@@ -736,7 +803,7 @@ public class HomeController : Controller
                              <div style="width:100%; height:100%; display: flex;">
                                  {tabText}
                                  <div class="click-animate unselectable" onclick="ClickDone('{content.Id}')" style="cursor: pointer; min-width: 18px; max-width:18px; min-height: 18px; max-height: 18px; border: solid #cdd0d4;  border-width:1px; margin-top: 3px; margin-right: 10px; border-radius: 5px;"></div>
-                                     <div class="test" style="display: flex; width:100%; border: none; outline: none;">
+                                     <div class="hover-container" style="display: flex; width:100%; border: none; outline: none;">
                                      {resultContent}
                                      </div>
                                  </div>
