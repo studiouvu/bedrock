@@ -2,12 +2,14 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Net.Mail;
 using System.Text;
+using System.Text.RegularExpressions;
 using Amazon;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.DocumentModel;
 using Amazon.Runtime;
 using Bedrock.Models;
+using GEmojiSharp;
 using Markdig;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
@@ -236,7 +238,7 @@ public class HomeController : Controller
 
         var builder = new StringBuilder();
 
-        foreach (var project in projects.OrderByDescending(project => project.CreateTick))
+        foreach (var project in projects.OrderBy(project => ReplaceEmojisWithZero(project.Name)))
         {
             var backgroundColor = project.Id == userSetting.CurrentProject ? "#1f1f1f" : "transparent";
 
@@ -363,7 +365,7 @@ public class HomeController : Controller
         {
             var tick = (DateTime.UtcNow.Ticks - secretary.lastUpdateTick);
             var minutes = TimeSpan.FromTicks(tick).TotalMinutes;
-            if (minutes < 60)
+            if (minutes < 30)
                 return false;
         }
 
@@ -422,9 +424,9 @@ public class HomeController : Controller
             builder.Append($")\n");
         }
 
-        var originText = $"Today is {DateTime.Now:yy-MM-dd}. Please organize and select five tasks that need to be done immediately today in order of importance, and include the reason for each. Use Korean. If the Depth is higher than the Task's Depth above, it means it is a subtask of that task. ProjectName could also signify a deadline. Next to each task title, add the project name in the format: 1. Task Name (Project Name). Also, write the reasons below on separate lines. Then, select and inform five important long-term tasks that need to be remembered, along with their reasons.";
+        var originText = $"Today is {DateTime.Now:yy-MM-dd}. Please organize and select 10 tasks that need to be done immediately today in order of importance, and include the reason for each. Use Korean. If the Depth is higher than the Task's Depth above, it means it is a subtask of that task. ProjectName could also signify a deadline. Next to each task title, add the project name in the format: 1. Task Name (Project Name). Also, write the reasons below on separate lines. Then, select and inform 10 important long-term tasks that need to be remembered, along with their reasons.";
         //오늘은 {DateTime.Now:yy-MM-dd}일이야, 너가 생각하기에 중요한 순서대로 오늘 당장 해야 할 일을 정리해서 5개를 뽑아줘, 그리고 각각 그 이유도 같이 붙여줘 , 한국어로 , Depth는 상단의 Task의 Depth보다 높을 경우 그 task의 하위 task라는 것을 뜻해 , ProjectName은 기한을 뜻할 수도 있어 ,  각 할일의 제목 옆에 프로젝트 이름을 붙여주고 1. 태스크 이름 (프로젝트 이름) 이런식으로 그리고 이유를 줄 바꿔서 밑에 써주고 , 그리고 그 다음엔 장기적으로 기억해야 할 중요한 일 5가지를 뽑아서 이유와 함께 알려줘
-        var example = "예시 : 오늘 해야 할 일 5가지:  \n1. **내일 예정된 영남님과의 약속 준비하기 (화요일)**  \n   - 내일 있을 중요한 약속이므로 즉시 준비해야 합니다.";
+        var example = "예시 : 오늘 해야 할 일 5가지:  \n1. 내일 예정된 영남님과의 약속 준비하기 (화요일)  \n   - 내일 있을 중요한 약속이므로 즉시 준비해야 합니다.";
         var queryText = originText + example + builder;
 
         var resultText = "";
@@ -1016,5 +1018,11 @@ public class HomeController : Controller
         {
             RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier
         });
+    }
+
+    public static string ReplaceEmojisWithZero(string text)
+    {
+        var result = Regex.Replace(text, Emoji.RegexPattern, "0"); // Lorem  ipsum
+        return result;
     }
 }
