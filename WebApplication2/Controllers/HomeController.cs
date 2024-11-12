@@ -141,7 +141,7 @@ public class HomeController : Controller
         var deviceId = data.DeviceId;
         var userId = await GetUserId(deviceId);
         var emailId = await GetEmailId(userId);
-        return string.IsNullOrEmpty(emailId) ? userId : emailId;
+        return string.IsNullOrEmpty(emailId) ? userId.GetHashCode().ToString() : emailId;
     }
 
     [HttpPost]
@@ -382,7 +382,7 @@ public class HomeController : Controller
         else
         {
             secretary.lastUpdateTick = DateTime.UtcNow.Ticks;
-            secretary.Content = "업데이트 중입니다, 잠시만 기다려주세요";
+            secretary.Content = "업데이트 중입니다, 잠시만 기다려주세요<br>" + secretary.Content;
         }
 
         await AwsKey.Context.SaveAsync(secretary);
