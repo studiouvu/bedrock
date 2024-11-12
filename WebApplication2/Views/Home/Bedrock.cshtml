@@ -28,7 +28,8 @@
                 ⛳Home
             </div>
             <div style='min-height:1px; width:100%; background-color:#1f1f1f;'></div>
-            <div id="project-list" class="scroll-vertical" style="overscroll-behavior: contain; margin-top: 20px; flex: none; overflow-y: auto; max-height: 650px; white-space: nowrap; width: 100%;">
+            <div id="project-list" class="scroll-vertical"
+                 style="overscroll-behavior: contain; margin-top: 20px; flex: none; overflow-y: auto; max-height: 70%; white-space: nowrap; width: 100%;">
                 <div
                     style="cursor: pointer; margin: 0px; background-color: #1f1f1f; border-radius: 10px; padding: 4px 8px;">
                     -
@@ -43,136 +44,144 @@
             <p id="user-id" style="font-size: 12px; margin-top: auto;  color:#919191;"></p>
         </div>
     </div>
-    <div class="container" style="padding-top: 5px; margin-bottom: 200px; min-height: 600px; ">
-        <div
-            style="width: 100%; max-width: 600px; margin-left: auto; margin-right: auto; border-radius: 10px;">
-            <font color="#919191">
-                <div style="position: fixed; top: 0px; width: 100%; max-width: 600px; z-index: 1; background-color: #0f0f0f; border: none; outline: none; padding-bottom: 5px; padding-top: 34px; display: flex; margin-bottom: 15px">
-                    <div class="hide-on-small"
-                         style="width: 28px; height: 100%; padding: 6px; border-radius: 10px; margin-right: 6px;">
-                        <div class="text-center">
-                            🎏
-                        </div>
-                    </div>
-                    <div class="display-on-small click-color unselectable"
-                         onclick="CreateNewProject()"
-                         style="cursor: pointer; background-color: #1f1f1f; min-width: 34px; height: 100%; padding: 6px; border-radius: 10px; margin-right: 6px;">
-                        <div class="text-center">
-                            <b>+</b>
-                        </div>
-                    </div>
+    <div style="display: flex; height: 100%; max-width: 100%; ">
+        <div class="hide-on-small display-on-medium" style="margin-left: 230px;"></div>
+        <div style="padding-top: 5px; width: 100%; margin-bottom: 200px; min-height: 600px; display: flex; justify-content : center; ">
+            <div
+                style="width: 100%; margin-left: auto; margin-right: auto; max-width: 600px; border-radius: 10px;">
+                <font color="#919191">
                     <div
-                        id="last-projects"
-                        class="scroll-hoizontal"
-                        style="height: 100%; border: none; outline: none; display: flex; overflow: scroll;  white-space: nowrap;">
-                        <div
-                            style="cursor: pointer; height: 100%; background-color: #1f1f1f; padding: 6px 9px; border-radius: 10px; margin-right: 6px;">
+                        style="position: fixed; top: 0px; width: 100%; max-width: 600px; z-index: 1; background-color: #0f0f0f; border: none; outline: none; padding-bottom: 5px; padding-top: 34px; display: flex; margin-bottom: 15px">
+                        <div class="hide-on-small"
+                             style="width: 28px; height: 100%; padding: 6px; border-radius: 10px; margin-right: 6px;">
                             <div class="text-center">
-                                --
+                                🎏
                             </div>
                         </div>
-                    </div>
-                </div>
-            </font>
-
-            <div style="width: 100%; height: 100%; margin-top: 65px;">
-                <div id="project-name-holder" style="display: flex; border: none; outline: none;">
-                    <div style="display: flex; align-items: center">
-                        @* <div *@
-                        @*     class="click-animate unselectable" *@
-                        @*     style="cursor: pointer; width: 22px; height: 22px; border: solid #cdd0d4;  border-width:1px; margin-bottom: 4px; margin-right: 8px; border-radius: 5px;"> *@
-                        @* </div> *@
-                        <input
-                            id="project-name"
-                            class="title-input input-box"
-                            type="text"
-                            style="height:100%"
-                            placeholder=""
-                            value="-"
-                            onfocusout="InputProjectName()"
-                            onkeyup="InputProjectName()"/>
-                    </div>
-                </div>
-                <div style="border: none; outline: none; padding-bottom: 4px; display: flex;">
-                    <div
-                        onclick="ShowDoneTask()"
-                        class="click-color unselectable"
-                        style="cursor: pointer; height: 100%; border-radius: 10px; padding: 4px;">
+                        <div class="display-on-small click-color unselectable"
+                             onclick="CreateNewProject()"
+                             style="cursor: pointer; background-color: #1f1f1f; min-width: 34px; height: 100%; padding: 6px; border-radius: 10px; margin-right: 6px;">
+                            <div class="text-center">
+                                <b>+</b>
+                            </div>
+                        </div>
                         <div
-                            class="text-center">
-                            <font color="#919191" style="display: flex;">
-                                ✔️
-                                <div id="task-count">
-                                    -/-
+                            id="last-projects"
+                            class="scroll-hoizontal"
+                            style="height: 100%; border: none; outline: none; display: flex; overflow: scroll;  white-space: nowrap;">
+                            <div
+                                style="cursor: pointer; height: 100%; background-color: #1f1f1f; padding: 6px 9px; border-radius: 10px; margin-right: 6px;">
+                                <div class="text-center">
+                                    --
                                 </div>
-                            </font>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div
-                    style="max-width: 100%; margin-left: auto; margin-right: auto; border-radius: 10px;">
-                    <div id="tblContent" style="max-width: 100%;  overflow-wrap: break-word;">
+                </font>
+
+                <div style="width: 100%; height: 100%; margin-top: 65px;">
+                    <div id="project-name-holder" style="display: flex; border: none; outline: none;">
+                        <div style="display: flex; align-items: center">
+                            @* <div *@
+                            @*     class="click-animate unselectable" *@
+                            @*     style="cursor: pointer; width: 22px; height: 22px; border: solid #cdd0d4;  border-width:1px; margin-bottom: 4px; margin-right: 8px; border-radius: 5px;"> *@
+                            @* </div> *@
+                            <input
+                                id="project-name"
+                                class="title-input input-box"
+                                type="text"
+                                style="height:100%"
+                                placeholder=""
+                                value="-"
+                                onfocusout="InputProjectName()"
+                                onkeyup="InputProjectName()"/>
+                        </div>
                     </div>
-                    <div style="min-height: 4px;">
-                    </div>
-                    <div class="input-hide">
-                        <div style="max-width: 100%; min-height: 42px; display: flex; align-items: center;">
-                            <div id="input-tab" style="height: 100%;"></div>
+                    <div style="border: none; outline: none; padding-bottom: 4px; display: flex;">
+                        <div
+                            onclick="ShowDoneTask()"
+                            class="click-color unselectable"
+                            style="cursor: pointer; height: 100%; border-radius: 10px; padding: 4px;">
                             <div
-                                class="click-animate unselectable"
-                                style="cursor: pointer; min-width: 18px; min-height: 18px; border: solid #cdd0d4;  border-width:1px; margin-right: 4px; border-radius: 5px;">
+                                class="text-center">
+                                <font color="#919191" style="display: flex;">
+                                    ✔️
+                                    <div id="task-count">
+                                        -/-
+                                    </div>
+                                </font>
                             </div>
-                            <div class="input-box-holder" style="display: flex; align-items: center; width: 100%; background: #1b1c1c; overflow-wrap: break-word;">
-                                <div style="width: 100%; height: 100%; margin-left: 5px; margin-right: 5px;">
-                                    <input class="input-box" id="input1" type="text" placeholder="> ..." onKeyDown="SendInput(event)"/>
+                        </div>
+                    </div>
+                    <div
+                        style="max-width: 100%; margin-left: auto; margin-right: auto; border-radius: 10px;">
+                        <div id="tblContent" style="max-width: 100%;  overflow-wrap: break-word;">
+                        </div>
+                        <div style="min-height: 4px;">
+                        </div>
+                        <div class="input-hide">
+                            <div style="max-width: 100%; min-height: 42px; display: flex; align-items: center;">
+                                <div id="input-tab" style="height: 100%;"></div>
+                                <div
+                                    class="click-animate unselectable"
+                                    style="cursor: pointer; min-width: 18px; min-height: 18px; border: solid #cdd0d4;  border-width:1px; margin-right: 4px; border-radius: 5px;">
                                 </div>
-                            </div>
-                            <div
-                                class="click-color unselectable input-box-holder"
-                                onclick="SendInputForce()"
-                                style="cursor: pointer; min-width: 42px; min-height: 42px; display: flex; align-items: center; background: #1b1c1c;
+                                <div class="input-box-holder"
+                                     style="display: flex; align-items: center; width: 100%; background: #1b1c1c; overflow-wrap: break-word;">
+                                    <div style="width: 100%; height: 100%; margin-left: 5px; margin-right: 5px;">
+                                        <input class="input-box" id="input1" type="text" placeholder="> ..."
+                                               onKeyDown="SendInput(event)"/>
+                                    </div>
+                                </div>
+                                <div
+                                    class="click-color unselectable input-box-holder"
+                                    onclick="SendInputForce()"
+                                    style="cursor: pointer; min-width: 42px; min-height: 42px; display: flex; align-items: center; background: #1b1c1c;
                              padding: 5px; margin-left: 5px; ">
-                                <div class="text-center" style="width: 100%; align-items: center;">
-                                    →
+                                    <div class="text-center" style="width: 100%; align-items: center;">
+                                        →
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            @if (ViewBag.Login == false)
-            {
-                <span id="login-holder">
-                    <div style="max-width: 400px; margin-top: 80px; margin-left: auto; margin-right: auto; background-color: #044a80; padding: 15px;border-radius: 10px;">
-                        <div class="text-center" style="width: 100%; align-items: center;">
-                            <div id="login-form">
-                                <h7>
-                                    로그인하여 데이터를 안전하게 보관하세요
-                                </h7>
-                                <div style="max-width: 100%; margin-top: 10px; display: flex; align-items: center;">
-                                    <div class="input-box-holder" style="width: 100%; background: #092c47; overflow-wrap: break-word;">
-                                        <div style="width: 100%; height: 100%; margin-left: 10px; margin-right: 10px;">
-                                            <input id="mail-input" class="input-box" type="text" placeholder="your-email@@email.com" onKeyDown="SendEmail(event)"/>
+                @if (ViewBag.Login == false)
+                {
+                    <span id="login-holder">
+                        <div
+                            style="max-width: 400px; margin-top: 80px; margin-left: auto; margin-right: auto; background-color: #044a80; padding: 15px;border-radius: 10px;">
+                            <div class="text-center" style="width: 100%; align-items: center;">
+                                <div id="login-form">
+                                    <h7>
+                                        로그인하여 데이터를 안전하게 보관하세요
+                                    </h7>
+                                    <div style="max-width: 100%; margin-top: 10px; display: flex; align-items: center;">
+                                        <div class="input-box-holder"
+                                             style="width: 100%; background: #092c47; overflow-wrap: break-word;">
+                                            <div style="width: 100%; height: 100%; margin-left: 10px; margin-right: 10px;">
+                                                <input id="mail-input" class="input-box" type="text"
+                                                       placeholder="your-email@@email.com" onKeyDown="SendEmail(event)"/>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div
-                                        class="click-color unselectable input-box-holder"
-                                        onclick="SendEmailForce()"
-                                        style="background: #092c47; cursor: pointer; min-width: 42px; min-height: 42px; display: flex; align-items: center;
+                                        <div
+                                            class="click-color unselectable input-box-holder"
+                                            onclick="SendEmailForce()"
+                                            style="background: #092c47; cursor: pointer; min-width: 42px; min-height: 42px; display: flex; align-items: center;
                                     padding: 5px; margin-left: 5px; ">
-                                        <div class="text-center" style="width: 100%; align-items: center;">
-                                            →
+                                            <div class="text-center" style="width: 100%; align-items: center;">
+                                                →
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </span>
-            }
+                    </span>
+                }
+            </div>
         </div>
     </div>
-
     <div
         class="click-color unselectable input-hide"
         onclick="CurrentProjectArchive()"
@@ -188,11 +197,11 @@
 @section Scripts
 {
     <script type="text/javascript">
-        var deviceId = "@ViewBag.DeviceId";
-        var emailId = "";
-        var depth = 0;
-        var isShift = false;
-        
+    var deviceId = "@ViewBag.DeviceId";
+    var emailId = "";
+    var depth = 0;
+    var isShift = false;
+
     $(function () {
         /*document.addEventListener('keydown', function (event) {
             var key = event.key || event.keyCode;
@@ -202,24 +211,24 @@
             return false;
         });*/
 
-        document.getElementById("input1").addEventListener("keyup", function(event) {
+        document.getElementById("input1").addEventListener("keyup", function (event) {
             if (event.key === "Shift") {
                 isShift = false;
             }
         });
 
-        document.getElementById("input1").addEventListener("keydown", function(event) {
+        document.getElementById("input1").addEventListener("keydown", function (event) {
             if (event.key === "Shift") {
                 event.preventDefault();
                 isShift = true;
             }
-            
+
             if (event.key === "Tab") {
                 event.preventDefault();
-                
+
                 if (isShift) {
                     depth -= 1;
-                    
+
                     if (depth < 0)
                         depth = 0;
 
@@ -229,9 +238,7 @@
                     }
 
                     $('#input-tab').html(s);
-                }
-                else
-                {
+                } else {
                     depth += 1;
                     $('#input-tab').append("&nbsp;&nbsp;&nbsp;&nbsp;");
                 }
@@ -239,7 +246,7 @@
         });
 
         ReceiveDeviceId();
-        
+
         /*const myDivs = document.querySelectorAll('.click-animate');
 
         myDivs.forEach((div) => {
@@ -252,27 +259,27 @@
     function ReceiveDeviceId() {
         fetch('@Url.Action("ReceiveDeviceId")', {
             method: 'POST',
-            credentials: 'include', 
+            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json; charset=utf-8'
             },
-            body: JSON.stringify({ deviceId: deviceId })
+            body: JSON.stringify({deviceId: deviceId})
         })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('fail to load user id');
-            }
-            return response.text();
-        })
-        .then(data => {
-            deviceId = data;
-            ReceiveFullContent();
-            ReceiveUserId();
-            GetTaskCount();
-        })
-        .catch(error => {
-           
-        });
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('fail to load user id');
+                }
+                return response.text();
+            })
+            .then(data => {
+                deviceId = data;
+                ReceiveFullContent();
+                ReceiveUserId();
+                GetTaskCount();
+            })
+            .catch(error => {
+
+            });
     }
 
     function ReceiveFullContent() {
@@ -280,7 +287,7 @@
         elements.forEach(element => {
             element.style.display = 'block';
         });
-        
+
         ReceiveContent();
         GetTaskCount();
         ReceiveProjectName();
@@ -317,7 +324,7 @@
     function ReceiveUserId() {
         fetch('@Url.Action("ReceiveUserId")', {
             method: 'POST',
-            credentials: 'include', 
+            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json; charset=utf-8'
             },
@@ -326,24 +333,24 @@
                     DeviceId: deviceId,
                 })
         })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('fail to load user id');
-            }
-            return response.text();
-        })
-        .then(data => {
-            $('#user-id').html(data);
-        })
-        .catch(error => {
-            $('#user-id').html("fail to load user id");
-        });
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('fail to load user id');
+                }
+                return response.text();
+            })
+            .then(data => {
+                $('#user-id').html(data);
+            })
+            .catch(error => {
+                $('#user-id').html("fail to load user id");
+            });
     }
 
     function ReceiveProjectName() {
         fetch('@Url.Action("ReceiveCurrentProjectName")', {
             method: 'POST',
-            credentials: 'include', 
+            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json; charset=utf-8'
             },
@@ -367,43 +374,41 @@
             });
     }
 
-    function ClickDone(id , destroy) {
+    function ClickDone(id, destroy) {
         const element = document.getElementById(id);
         element.classList.add('fade-out'); // 투명해지도록 클래스 추가
 
-        if (destroy == 'true')
-        {
+        if (destroy == 'true') {
             setTimeout(() => {
                 element.remove();
             }, 500); // 1000ms = 1초
         }
-    
+
         fetch('@Url.Action("ClickDone")', {
             method: 'POST',
-            credentials: 'include', 
+            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json; charset=utf-8'
             },
-            body: JSON.stringify({ data: id })
+            body: JSON.stringify({data: id})
         })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('네트워크 응답에 문제가 있습니다.');
-            }
-            return response.text();
-        })
-        .then(data => {
-            GetTaskCount();
-            if (destroy == 'false')
-            {
-                setTimeout(() => {
-                    ReceiveFullContent();
-                }, 500); // 1000ms = 1초
-            }
-        })
-        .catch(error => {
-            $('#tblContent').html("fail");
-        });
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('네트워크 응답에 문제가 있습니다.');
+                }
+                return response.text();
+            })
+            .then(data => {
+                GetTaskCount();
+                if (destroy == 'false') {
+                    setTimeout(() => {
+                        ReceiveFullContent();
+                    }, 500); // 1000ms = 1초
+                }
+            })
+            .catch(error => {
+                $('#tblContent').html("fail");
+            });
     }
 
     function ClickRecover(id) {
@@ -413,7 +418,7 @@
             headers: {
                 'Content-Type': 'application/json; charset=utf-8'
             },
-            body: JSON.stringify({ data: id })
+            body: JSON.stringify({data: id})
         })
             .then(response => {
                 if (!response.ok) {
@@ -433,8 +438,7 @@
         let typped = document.getElementById('input1').value;
         document.getElementById('input1').value = '';
 
-        if (typped == "")
-        {
+        if (typped == "") {
             depth = 0;
             $('#input-tab').html("");
             return;
@@ -442,14 +446,15 @@
 
         fetch('@Url.Action("ReceiveText")', {
             method: 'POST',
-            credentials: 'include', 
+            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json; charset=utf-8'
             },
             body: JSON.stringify({
-            depth: depth,
-            deviceId: deviceId,
-             data: typped })
+                depth: depth,
+                deviceId: deviceId,
+                data: typped
+            })
         })
             .then(response => {
                 if (!response.ok) {
@@ -469,7 +474,7 @@
     function SendInput(event) {
         var key = event.key || event.keyCode;
 
-        if(key != 'Enter')
+        if (key != 'Enter')
             return;
 
         SendInputForce();
@@ -478,7 +483,7 @@
     function SendEmail(event) {
         var key = event.key || event.keyCode;
 
-        if(key != 'Enter')
+        if (key != 'Enter')
             return;
 
         SendEmailForce();
@@ -490,11 +495,11 @@
 
         fetch('@Url.Action("ReceiveEmailId")', {
             method: 'POST',
-            credentials: 'include', 
+            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json; charset=utf-8'
             },
-            body: JSON.stringify({ data: typped })
+            body: JSON.stringify({data: typped})
         })
             .then(response => {
                 if (!response.ok) {
@@ -514,7 +519,7 @@
     function SendCode(event) {
         var key = event.key || event.keyCode;
 
-        if(key != 'Enter')
+        if (key != 'Enter')
             return;
 
         SendCodeForce();
@@ -526,14 +531,15 @@
 
         fetch('@Url.Action("ReceiveEmailCode")', {
             method: 'POST',
-            credentials: 'include', 
+            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json; charset=utf-8'
             },
-            body: JSON.stringify({ 
+            body: JSON.stringify({
                 deviceId: deviceId,
                 content: emailId,
-                data: typped })
+                data: typped
+            })
         })
             .then(response => {
                 if (!response.ok) {
@@ -560,13 +566,14 @@
     function SendProjectName(name) {
         fetch('@Url.Action("ReceiveSendProjectName")', {
             method: 'POST',
-            credentials: 'include', 
+            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json; charset=utf-8'
             },
             body: JSON.stringify({
-            deviceId: deviceId,
-             data: name })
+                deviceId: deviceId,
+                data: name
+            })
         })
             .then(response => {
                 if (!response.ok) {
@@ -585,18 +592,18 @@
     function ShowDate() {
         fetch('@Url.Action("ReceiveShowDate")', {
             method: 'POST',
-            credentials: 'include', 
+            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json; charset=utf-8'
             },
-            body: JSON.stringify({ deviceId: deviceId })
+            body: JSON.stringify({deviceId: deviceId})
         })
-        .then(data => {
-            ReceiveFullContent();
-        })
-        .catch(error => {
-            $('#tblContent').html("fail");
-        });
+            .then(data => {
+                ReceiveFullContent();
+            })
+            .catch(error => {
+                $('#tblContent').html("fail");
+            });
     }
 
     function ShowDoneTask() {
@@ -606,7 +613,7 @@
             headers: {
                 'Content-Type': 'application/json; charset=utf-8'
             },
-            body: JSON.stringify({ deviceId: deviceId })
+            body: JSON.stringify({deviceId: deviceId})
         })
             .then(data => {
                 ReceiveFullContent();
@@ -619,7 +626,7 @@
     function GetTaskCount() {
         fetch('@Url.Action("ReceiveTaskCount")', {
             method: 'POST',
-            credentials: 'include', 
+            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json; charset=utf-8'
             },
@@ -628,23 +635,23 @@
                     DeviceId: deviceId,
                 })
         })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('네트워크 응답에 문제가 있습니다.');
-            }
-            return response.text();
-        }).then(data => {
-                $('#task-count').html(data);
-            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('네트워크 응답에 문제가 있습니다.');
+                }
+                return response.text();
+            }).then(data => {
+            $('#task-count').html(data);
+        })
             .catch(error => {
                 $('#tblContent').html("fail");
-        });
+            });
     }
 
     function GetLastProjects() {
         fetch('@Url.Action("ReceiveLastProjectList")', {
             method: 'POST',
-            credentials: 'include', 
+            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json; charset=utf-8'
             },
@@ -669,7 +676,7 @@
     function GetProjectList() {
         fetch('@Url.Action("ReceiveProjectList")', {
             method: 'POST',
-            credentials: 'include', 
+            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json; charset=utf-8'
             },
@@ -694,42 +701,43 @@
     function CreateNewProject() {
         fetch('@Url.Action("ReceiveCreateProject")', {
             method: 'POST',
-            credentials: 'include', 
+            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json; charset=utf-8'
             },
-            body: JSON.stringify({ deviceId: deviceId})
+            body: JSON.stringify({deviceId: deviceId})
         })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('네트워크 응답에 문제가 있습니다.');
-            }
-            return response.text();
-        })
-        .then(data => {
-            ReceiveFullContent();
-        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('네트워크 응답에 문제가 있습니다.');
+                }
+                return response.text();
+            })
+            .then(data => {
+                ReceiveFullContent();
+            })
             .catch(error => {
                 $('#last-projects').html("fail");
             });
     }
 
-    function ChangeProject(projectId , projectName) {
+    function ChangeProject(projectId, projectName) {
         $('#tblContent').html("<div class='fade-in' style='opacity: 0; min-height: 100px; border-radius: 15px; background-color: #1b1c1c'></div>");
         document.getElementById('project-name').value = projectName;
         depth = 0;
         $('#input-tab').html("");
         scrollToTop();
-        
+
         fetch('@Url.Action("ReceiveChangeProject")', {
             method: 'POST',
-            credentials: 'include', 
+            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json; charset=utf-8'
             },
-            body: JSON.stringify({ 
-            deviceId: deviceId,
-            data: projectId })
+            body: JSON.stringify({
+                deviceId: deviceId,
+                data: projectId
+            })
         })
             .then(response => {
                 if (!response.ok) {
@@ -750,13 +758,14 @@
 
         fetch('@Url.Action("ReceiveCurrentProjectArchive")', {
             method: 'POST',
-            credentials: 'include', 
+            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json; charset=utf-8'
             },
             body: JSON.stringify({
-            deviceId: deviceId,
-             data: projectId })
+                deviceId: deviceId,
+                data: projectId
+            })
         })
             .then(response => {
                 if (!response.ok) {
@@ -779,16 +788,16 @@
         elements.forEach(element => {
             element.style.display = 'none';
         });
-        
+
         $('#tblContent').html("<div class='fade-in-long' style='opacity: 0; min-height: 300px; border-radius: 15px; background-color: #1b1c1c'></div>");
         $('#task-count').html("1시간마다 자동으로 업데이트됩니다.");
-        
+
         document.getElementById('project-name').value = "⛳Home";
         depth = 0;
         document.title = "⛳Home - Bedrock";
-        
+
         $('#input-tab').html("");
-    
+
         fetch('@Url.Action("ReceiveGptContent")', {
             method: 'POST',
             credentials: 'include',
@@ -796,22 +805,23 @@
                 'Content-Type': 'application/json; charset=utf-8'
             },
             body: JSON.stringify({
-                deviceId: deviceId})
+                deviceId: deviceId
+            })
         })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('네트워크 응답에 문제가 있습니다.');
-            }
-            return response.text();
-        })
-        .then(data => {
-            $('#tblContent').html(data);
-            GetLastProjects();
-            GetProjectList();
-        })
-        .catch(error => {
-            $('#last-projects').html("fail");
-        });
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('네트워크 응답에 문제가 있습니다.');
+                }
+                return response.text();
+            })
+            .then(data => {
+                $('#tblContent').html(data);
+                GetLastProjects();
+                GetProjectList();
+            })
+            .catch(error => {
+                $('#last-projects').html("fail");
+            });
     }
 
     function PageReload() {
@@ -825,5 +835,5 @@
         });
     }
 
-    </script>
+</script>
 }
