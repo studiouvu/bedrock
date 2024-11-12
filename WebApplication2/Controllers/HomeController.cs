@@ -391,7 +391,7 @@ public class HomeController : Controller
         {
             var tick = (DateTime.UtcNow.Ticks - secretary.lastUpdateTick);
             var minutes = TimeSpan.FromTicks(tick).TotalMinutes;
-            if (minutes < 30)
+            if (minutes < 60)
                 return false;
         }
 
@@ -443,8 +443,11 @@ public class HomeController : Controller
                 var dateTime = DateTime.MinValue.AddTicks(content.Tick);
                 var timeSpan = DateTime.Now - DateTime.UtcNow;
                 var fixedDateTime = dateTime.Add(timeSpan);
+                
+                var doneDateTime = DateTime.MinValue.AddTicks(content.DoneTick);
+                var fixedDoneDateTime = doneDateTime.Add(timeSpan);
 
-                var t = $"(Done: {content.Done} , CreateTime: {fixedDateTime:yy-MM-dd} , Content: {content.Text}), Depth: {content.depth} , ProjectName: {project.Name}),";
+                var t = $"(Done: {content.Done} , CreateTime: {fixedDateTime:yy-MM-dd} , DoneTime: {fixedDoneDateTime:yy-MM-dd} , Content: {content.Text}), Depth: {content.depth}),";
                 builder.Append(t);
             }
 
@@ -452,16 +455,9 @@ public class HomeController : Controller
         }
 
         var originText = $"""
-                         Today is {DateTime.Now:yy-MM-dd}.
-                          Please organize and select 10 tasks that need to be done immediately today in order of importance as you see fit,
-                          and include the reason for each, in Korean. If a task has a higher Depth than the task above it,
-                           it means it is a subtask of that task. The ProjectName may indicate a deadline;
-                            for example, '24.11.25' means by November 25, 2024, and '24.11' means during November 2024 without a specific date.
-                             Attach the project name next to each task's title in the format '1. Task Name - Project Name',
-                              and write the reason below it on a new line. Then, select 10 important long-term tasks to remember,
-                               along with their reasons.
+                         Today is {DateTime.Now:yy-MM-dd}. Please organize and select up to 10 tasks that need to be done immediately today in order of importance as you see fit, and include the reason for each, in Korean. If a task has a higher Depth than the task above it, it means it is a subtask of that task. The ProjectName may indicate a deadline; for example, '24.11.25' means by November 25, 2024, and '24.11' means during November 2024 without a specific date. Attach the project name next to each task's title in the format '1. Task Name - Project Name', and write the reason below it on a new line. Then, group the tasks by task category as you see fit, and select up to 10 important tasks per category with reasons. You can decide the name of the category; for example, if there are tasks like Bedrock 0.1, Bedrock 0.2, Bedrock Secretary, you can name the category 'Bedrock Project'. Finally, provide me with some advice that could be helpful.
                          """;
-        //오늘은 {DateTime.Now:yy-MM-dd}일이야, 너가 생각하기에 중요한 순서대로 오늘 당장 해야 할 일을 정리해서 10개를 뽑아줘, 그리고 각각 그 이유도 같이 붙여줘 , 한국어로 , Depth는 상단의 Task의 Depth보다 높을 경우 그 task의 하위 task라는 것을 뜻해 , ProjectName은 기한을 뜻할 수도 있어 , 24.11.25 이런건 24년 11월 25일까지인거고 24.11 이건 24년 11월 중으로 일자는 확정되지 않은 task라는 것이야 ,  각 할일의 제목 옆에 프로젝트 이름을 붙여주고 "1. 태스크 이름 - 프로젝트 이름" 이런식으로 그리고 이유를 줄 바꿔서 밑에 써주고 , 그리고 그 다음엔 장기적으로 기억해야 할 중요한 일 10가지를 뽑아서 이유와 함께 알려줘
+        //오늘은 {DateTime.Now:yy-MM-dd}일이야, 너가 생각하기에 중요한 순서대로 오늘 당장 해야 할 일을 정리해서 10개를 뽑아줘, 그리고 각각 그 이유도 같이 붙여줘 , 한국어로 , Depth는 상단의 Task의 Depth보다 높을 경우 그 task의 하위 task라는 것을 뜻해 , ProjectName은 기한을 뜻할 수도 있어 , 24.11.25 이런건 24년 11월 25일까지인거고 24.11 이건 24년 11월 중으로 일자는 확정되지 않은 task라는 것이야 ,  각 할일의 제목 옆에 프로젝트 이름을 붙여주고 "1. 태스크 이름 - 프로젝트 이름" 이런식으로 그리고 이유를 줄 바꿔서 밑에 써주고 , 그리고 그 다음엔 너가 보기에 같은 분류의 프로젝트 별로 일감들을 묶어서 분류 별 중요한 일 10가지를 뽑아서 이유와 함께 알려줘 , 마지막에는 나에게 도움이 될만한 조언을 적어줘
         var example = "예시 : 오늘 해야 할 일 5가지:  \n1. 치과 가기 - 🎏24.11.12  \n   - 예약된 진료이므로 오늘 꼭 방문해야 합니다.";
         var queryText = originText + example + builder;
 
