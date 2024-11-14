@@ -385,6 +385,13 @@ public class HomeController : Controller
 
     public async Task<bool> UpdateGptContent(string userId)
     {
+        var emailId = await GetEmailId(userId);
+
+        var isLogin = string.IsNullOrEmpty(emailId) == false;
+
+        if (!isLogin)
+            return false;
+        
         var secretary = await AwsKey.Context.LoadAsync<BedrockSecretary>("0", userId);
 
         if (secretary != null)
@@ -412,13 +419,6 @@ public class HomeController : Controller
         }
 
         await AwsKey.Context.SaveAsync(secretary);
-
-        var emailId = await GetEmailId(userId);
-
-        var isLogin = string.IsNullOrEmpty(emailId) == false;
-
-        if (!isLogin)
-            return false;
 
         var projectList = await ReceiveProjects(userId);
         var projects = projectList.OrderByDescending(p => p.LastOpenTick);
@@ -455,10 +455,73 @@ public class HomeController : Controller
         }
 
         var originText = $"""
-                         Today is {DateTime.Now:yy-MM-dd}. Please organize and select up to 10 tasks that need to be done immediately today in order of importance as you see fit, and include the reason for each, in Korean. If a task has a higher Depth than the task above it, it means it is a subtask of that task. The ProjectName may indicate a deadline; for example, '24.11.25' means by November 25, 2024, and '24.11' means during November 2024 without a specific date. Attach the project name next to each task's title in the format '1. Task Name - Project Name', and write the reason below it on a new line. Then, group the tasks by task category as you see fit, and select up to 10 important tasks per category with reasons. You can decide the name of the category; for example, if there are tasks like Bedrock 0.1, Bedrock 0.2, Bedrock Secretary, you can name the category 'Bedrock Project'. Finally, provide me with some advice that could be helpful.
+                         Today is {DateTime.Now:yy-MM-dd HH:mm:ss}. Please organize and select up to 10 tasks that need to be done immediately today in order of importance as you see fit, and include the reason for each, in Korean. If a task has a higher Depth than the task above it, it means it is a subtask of that task. The ProjectName may indicate a deadline; for example, '24.11.25' means by November 25, 2024, and '24.11' means during November 2024 without a specific date. Attach the project name next to each task's title in the format '1. Task Name - Project Name', and write the reason below it on a new line. Then, group the tasks by task category as you see fit, and select up to 10 important tasks per category with reasons. You can decide the name of the category; for example, if there are tasks like Bedrock 0.1, Bedrock 0.2, Bedrock Secretary, you can name the category 'Bedrock Project'. Finally, provide me with some advice that could be helpful.
                          """;
         //오늘은 {DateTime.Now:yy-MM-dd}일이야, 너가 생각하기에 중요한 순서대로 오늘 당장 해야 할 일을 정리해서 10개를 뽑아줘, 그리고 각각 그 이유도 같이 붙여줘 , 한국어로 , Depth는 상단의 Task의 Depth보다 높을 경우 그 task의 하위 task라는 것을 뜻해 , ProjectName은 기한을 뜻할 수도 있어 , 24.11.25 이런건 24년 11월 25일까지인거고 24.11 이건 24년 11월 중으로 일자는 확정되지 않은 task라는 것이야 ,  각 할일의 제목 옆에 프로젝트 이름을 붙여주고 "1. 태스크 이름 - 프로젝트 이름" 이런식으로 그리고 이유를 줄 바꿔서 밑에 써주고 , 그리고 그 다음엔 너가 보기에 같은 분류의 프로젝트 별로 일감들을 묶어서 분류 별 중요한 일 10가지를 뽑아서 이유와 함께 알려줘 , 마지막에는 나에게 도움이 될만한 조언을 적어줘
-        var example = "예시 : 오늘 해야 할 일 5가지:  \n1. 치과 가기 - 🎏24.11.12  \n   - 예약된 진료이므로 오늘 꼭 방문해야 합니다.";
+        var example = """
+                      예시 : "
+                      오늘 해야 할 일 10가지:
+                      
+                      1. 통장 사본 제출하기 - 🥞.Daily
+                          - 오늘 오후 6시까지 제출해야 하므로 매우 긴급합니다.
+                      2. 베드락 iOS 출시 - 🦕24.11.12
+                          - 오늘이 출시 예정일이므로 반드시 마무리해야 합니다.
+                      3. 베드락 앱 추출하기 - 🦕24.11.12
+                          - iOS 출시를 위해 필요한 단계입니다.
+                      4. 베드락 폴더 기능 구현 - 🦕24.11.12
+                          - 앱의 주요 기능으로 출시 전에 완료해야 합니다.
+                      5. 이미 작성된 태스크 수정 및 탭 기능 추가 - 🦕24.11.12
+                          - 사용자 경험 향상을 위해 필요한 작업입니다.
+                      6. 어도비 결제 취소 및 할인받기 - 🥞.Daily
+                          - 불필요한 지출을 막고 할인 혜택을 받기 위해 오늘 처리해야 합니다.
+                      7. 베드락 프로젝트 마무리하기 - 👹24.11.11
+                          - 프로젝트를 끝내기 위해 남은 작업들을 정리해야 합니다.
+                      8. 안드로이드 내부 테스트 초대하기 - 🥞.Daily
+                          - 앱의 품질 향상을 위해 테스트가 필요합니다.
+                      9. 로그인 구현 과정 블로그 올리기 - 🐹11월
+                          - 예정된 포스팅으로, 일정에 맞게 작성해야 합니다.
+                      10. 진근 선배에게 연락하기 - 🐹11월
+                          - 중요한 전달 사항이 있을 수 있으므로 빠르게 연락해야 합니다.
+                      
+                      **카테고리별 그룹화 및 중요한 작업들**
+                      
+                      ### 베드락 프로젝트
+                      
+                      1. **베드락 iOS 출시** - 🦕24.11.12
+                          - 오늘이 출시일이므로 최우선으로 처리해야 합니다.
+                      2. **베드락 앱 추출하기** - 🦕24.11.12
+                          - 출시를 위해 필요한 과정입니다.
+                      3. **베드락 폴더 기능 구현** - 🦕24.11.12
+                          - 사용자 편의성을 높이기 위한 핵심 기능입니다.
+                      4. **이미 작성된 태스크 수정 및 탭 기능 추가** - 🦕24.11.12
+                          - 앱의 완성도를 높이기 위한 작업입니다.
+                      5. **베드락 프로젝트 마무리하기** - 👹24.11.11
+                          - 프로젝트의 성공적인 완료를 위해 남은 사항들을 정리해야 합니다.
+                      
+                      ### 일상 업무
+                      
+                      1. **통장 사본 제출하기** - 🥞.Daily
+                          - 오늘 오후 6시까지 꼭 제출해야 하므로 긴급합니다.
+                      2. **어도비 결제 취소 및 할인받기** - 🥞.Daily
+                          - 불필요한 비용 지출을 막고 할인 혜택을 받기 위해 오늘 처리해야 합니다.
+                      
+                      ### 연락
+                      
+                      1. **진근 선배에게 연락하기** - 🐹11월
+                          - 중요한 사항을 전달하거나 확인하기 위해 빠른 연락이 필요합니다.
+                      2. **영현이와 약속 잡기** - 🐹11월
+                          - 일정 조율을 위해 연락이 필요합니다.
+                      
+                      ### 토스트 클럽
+                      
+                      1. **안드로이드 내부 테스트 초대하기** - 🥞.Daily
+                          - 앱의 기능 테스트와 피드백 수집을 위해 필요합니다.
+                      
+                      **도움이 될 만한 조언** 오늘은 중요한 마감일과 급한 업무들이 많으니 우선순위를 정하여 하나씩 처리해 보세요. 가장 긴급한 일부터 시작하고, 중간중간 휴식을 취하며 효율적으로 업무를 진행하시길 바랍니다. 성공적인 하루 보내세요!  
+                        
+                      "
+                      \n
+                      """;
         var queryText = originText + example + builder;
 
         var resultText = "";
@@ -854,7 +917,7 @@ public class HomeController : Controller
         var firstProject = await CreateProject(userId, $"🦊{DateTime.Now:yy.MM.dd}");
 
         await WriteContent(userId, firstProject.Id, "안녕하세요🥳 새로 오신 것을 환영합니다!");
-        await WriteContent(userId, firstProject.Id, "Bedrock은 가장 강력한 Todo 앱입니다.  \n자세한 건 이 [소개 글](https://bedrock.es/home/about)을 읽어주세요");
+        await WriteContent(userId, firstProject.Id, "Bedrock은 가장 강력한 Todo 앱입니다.  \n자세한 건 아래 소개글을 읽어주세요");
         // await WriteContent(firstProject.Id, "Bedrock은 가장 강력한 Todo 앱입니다.  \n- **종단 간 암호화**로 완전한 보안  \n*(당신 외에 누구도 이 글을 읽을 수 없습니다)*  \n- **MarkDown** 문법 지원  \n- **완전한 동기화** *웹 , 안드로이드 , 아이폰 어디서든 사용하세요*  \n- **오픈 소스** *(우리는 절대로 죽지 않습니다!)*  \n  \n자세한 건 이 [소개 글](https://bedrock.es/home/about)을 읽어주세요");
 
         return firstProject.Id;
@@ -942,7 +1005,6 @@ public class HomeController : Controller
                                  {checkBoxDiv}
                                      <div class="hover-container" style="display: flex; width:100%; border: none; outline: none;">
                                      {resultContent}
-                                     {dateText}
                                      </div>
                                  </div>
                             </div>

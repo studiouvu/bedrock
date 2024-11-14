@@ -1,5 +1,11 @@
 ﻿@using Bedrock.Views
-<div class="text-left" style="width: 100%;">
+<div id="loader">
+    <img id="loader-icon" src="https://bedrock.es/favicon.png"
+         style="max-width: 50px; max-height: 50px;
+            animation: fade 2s infinite;
+            " alt="Loading Icon">
+</div>
+<div id="main" class="text-left" style="display: none; width: 100%;">
     <div class="hide-on-small">
         <div id="floating"
              style="
@@ -46,7 +52,8 @@
     </div>
     <div style="display: flex; height: 100%; max-width: 100%; ">
         <div class="hide-on-small display-on-medium" style="margin-left: 230px;"></div>
-        <div style="padding-top: 5px; width: 100%; margin-bottom: 200px; min-height: 600px; display: flex; justify-content : center; ">
+        <div class="display-on-small" style="min-width: 12px;"></div>
+        <div style="padding-top: 5px; width: 100%; margin-bottom: 200px; min-height: 600px; ">
             <div
                 style="width: 100%; margin-left: auto; margin-right: auto; max-width: 600px; border-radius: 10px;">
                 <font color="#919191">
@@ -56,13 +63,6 @@
                              style="width: 28px; height: 100%; padding: 6px; border-radius: 10px; margin-right: 6px;">
                             <div class="text-center">
                                 🎏
-                            </div>
-                        </div>
-                        <div class="display-on-small click-color unselectable"
-                             onclick="CreateNewProject()"
-                             style="cursor: pointer; background-color: #1f1f1f; min-width: 34px; height: 100%; padding: 6px; border-radius: 10px; margin-right: 6px;">
-                            <div class="text-center">
-                                <b>+</b>
                             </div>
                         </div>
                         <div
@@ -159,9 +159,11 @@
                                     <div style="max-width: 100%; margin-top: 10px; display: flex; align-items: center;">
                                         <div class="input-box-holder"
                                              style="width: 100%; background: #092c47; overflow-wrap: break-word;">
-                                            <div style="width: 100%; height: 100%; margin-left: 10px; margin-right: 10px;">
+                                            <div
+                                                style="width: 100%; height: 100%; margin-left: 10px; margin-right: 10px;">
                                                 <input id="mail-input" class="input-box" type="text"
-                                                       placeholder="your-email@@email.com" onKeyDown="SendEmail(event)"/>
+                                                       placeholder="your-email@@email.com"
+                                                       onKeyDown="SendEmail(event)"/>
                                             </div>
                                         </div>
                                         <div
@@ -180,17 +182,18 @@
                     </span>
                 }
             </div>
+            <div
+                class="click-color unselectable input-hide"
+                onclick="CurrentProjectArchive()"
+                style="cursor: pointer; background-color: #1f1f1f; max-width: 140px; margin-top: 700px; margin-left: auto; margin-right: auto; padding: 5px; border-radius: 10px;">
+                <div class="text-center" style="width: 100%; align-items: center;">
+                    <font color="#919191">
+                        Project archive
+                    </font>
+                </div>
+            </div>
         </div>
-    </div>
-    <div
-        class="click-color unselectable input-hide"
-        onclick="CurrentProjectArchive()"
-        style="cursor: pointer; background-color: #1f1f1f; max-width: 140px; margin-top: 400px; margin-left: auto; margin-right: auto; padding: 5px; border-radius: 10px;">
-        <div class="text-center" style="width: 100%; align-items: center;">
-            <font color="#919191">
-                Project archive
-            </font>
-        </div>
+        <div class="display-on-small" style="min-width: 12px;"></div>
     </div>
 </div>
 
@@ -201,6 +204,7 @@
     var emailId = "";
     var depth = 0;
     var isShift = false;
+    var init = false;
 
     $(function () {
         /*document.addEventListener('keydown', function (event) {
@@ -315,6 +319,16 @@
             })
             .then(data => {
                 $('#tblContent').html(data);
+                
+                if (init==false)
+                {
+                    const loader = document.getElementById('loader');
+                    loader.classList.add('hidden');
+
+                    document.getElementById('main').style.display = 'block';
+
+                    init = true;
+                }
             })
             .catch(error => {
                 $('#tblContent').html("fail");

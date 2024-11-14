@@ -537,7 +537,7 @@ body {
     }
 }
 
-@media (min-width: 1800px) {
+@media (min-width: 1400px) {
     .display-on-medium {
         display: none;
     }
@@ -605,4 +605,40 @@ body {
 
 .done-text {
  color: #6c6c6c;
+}
+
+/* 로딩 아이콘 스타일 */
+#loader {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 24px;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    
+    background-color: #0f0f0f;
+    width: 100%;
+    height: 100%;
+}
+
+#loader.hidden {
+    display: none;
+    /* iframe이 로드되면 숨김 */
+}
+
+/* 깜빡거리는 애니메이션 정의 */
+@keyframes fade {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.3;
+    }
 }
