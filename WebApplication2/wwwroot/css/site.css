@@ -507,6 +507,7 @@ body {
         border-bottom: none;
         background: transparent;
         outline: none;
+        align-items: center;
     }
 
     .hide-on-small {
@@ -530,6 +531,7 @@ body {
         border-bottom: none;
         background: transparent;
         outline: none;
+        align-items: center;
     }
 
     .display-on-small {
@@ -642,3 +644,34 @@ body {
         opacity: 0.3;
     }
 }
+
+.twemoji {
+    height: 1.2em;
+    width: 1.2em;
+    margin-right: 0.1em;
+    margin-left: 0.1em;
+    margin-top: auto;
+    margin-bottom: 0.2em;
+    vertical-align: middle;
+    image-rendering: crisp-edges;
+}
+
+.emoji-preview {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    color: transparent; /* 기본 텍스트 숨기기 */
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-size: 28px;
+    box-sizing: border-box;
+}
+
+/*.emoji-preview img {*/
+/*    height: 1em;*/
+/*    width: 1em;*/
+/*    vertical-align: middle;*/
+/*}*/
