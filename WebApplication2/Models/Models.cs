@@ -27,6 +27,7 @@ public class BedrockContent
     public long DoneTick;
     public int depth;
     public string UserId;
+    public bool IsTemplate;
 }
 
 public class BedrockProject
