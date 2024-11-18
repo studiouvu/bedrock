@@ -7,7 +7,7 @@ public class OpenAiControl
 
     public static void Initialize()
     {
-        _client = new ChatClient(model: "o1-preview", apiKey: Environment.GetEnvironmentVariable("OPENAI_API_KEY"));
+        _client = new ChatClient(model: "o1-mini", apiKey: Environment.GetEnvironmentVariable("OPENAI_API_KEY"));
     }
 
     public static async Task<string> GetChat(string text)
