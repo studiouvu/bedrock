@@ -15,7 +15,6 @@ using Markdig.Extensions.Emoji;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using TwemojiSharp;
 
 namespace Bedrock.Controllers;
 
