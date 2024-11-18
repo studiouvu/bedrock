@@ -182,6 +182,44 @@ public class HomeController : Controller
         return true;
     }
 
+    [HttpPost]
+    public async Task<bool> ReceiveSendDiaryContent([FromBody] DataModel model)
+    {
+        var deviceId = model.DeviceId;
+        var userId = await GetUserId(deviceId);
+        var userSetting = await GetUserSetting(userId);
+
+        var projectId = userSetting.CurrentProject;
+
+        if (projectId == "-")
+            return false;
+
+        var diaryContent = await AwsKey.Context.LoadAsync<BedrockDiaryContent>("0", projectId);
+
+        var content = model.Data;
+
+        if (diaryContent.Content == content)
+            return true;
+
+        diaryContent.Content = content;
+        diaryContent.LastTick = DateTime.UtcNow.Ticks;
+
+        await AwsKey.Context.SaveAsync(diaryContent);
+
+        var queryText =
+            $"Please summarize it as briefly as possible, and use real names for the individuals.\n" +
+            $"\"{content}\"";
+        //영어로 번역 "중요한 사건과 사람들을 정리해서 요약해줘 , 그리고 이 글을 쓴 사람의 관점 , 생각 , 상태를 요약해줘, 개인정보 보호는 안해도 됨 , 사람들은 실명으로 기록하기 , 영어로 기록해야함 , 고유명사들은 영어로 기록 할 필요 없음 , 요약은 최대한 간결하게 써야함 쓸데없이 길게 쓸 필요 없음"
+
+        var gptText = await OpenAiControl.GetChat(queryText);
+
+        diaryContent.Summary = gptText;
+
+        await AwsKey.Context.SaveAsync(diaryContent);
+
+        return true;
+    }
+
     private string GetRandomEmoji()
     {
         var emojiList = new List<string>()
@@ -276,7 +314,7 @@ public class HomeController : Controller
         var data = new
         {
             html = template,
-            content = projects.OrderBy(project => ReplaceEmojisWithZero(project.Name)).Select(project => new
+            content = projects.OrderBy(project => ReplaceEmojis(project.Name, "0")).Select(project => new
             {
                 id = project.Id,
                 name = project.Name,
@@ -393,10 +431,29 @@ public class HomeController : Controller
 
     private async Task<JsonResult> GetDiaryProjectHtml(string userId, string projectId, BedrockUserSetting userSetting)
     {
+        var diaryContent = await AwsKey.Context.LoadAsync<BedrockDiaryContent>("0", projectId);
+
+        if (diaryContent == null)
+        {
+            diaryContent = new BedrockDiaryContent()
+            {
+                Partition = "0",
+                ProjectId = projectId,
+                Content = "",
+                UserId = userId,
+                LastTick = DateTime.UtcNow.Ticks,
+            };
+
+            await AwsKey.Context.SaveAsync(diaryContent);
+        }
+
+        // var contentText = Markdown.ToHtml(diaryContent.Content).Replace("<p>", "").Replace("</p>", "");
+
         StringBuilder builder = new();
         builder.Append("<div style='min-height:6px; width:100%;'></div>");
-        builder.Append("<div style='min-height:1px;  width:100%; background-color:#1f1f1f;'></div>");
-        builder.Append("<div style='width:100%;'>test</div>");
+        builder.Append("<div style='min-height:1px; width:100%; margin-bottom: 15px; background-color:#1f1f1f;'></div>");
+        builder.Append("<div id='diary-content' style='width:100%; min-height:500px; padding-bottom:100px; outline: none;' contenteditable='true' onblur='InputDiaryContent()'>" +
+                       $"{diaryContent.Content}</div>");
 
         var data = new
         {
@@ -411,6 +468,7 @@ public class HomeController : Controller
     {
         var deviceId = data.DeviceId;
         var userId = await GetUserId(deviceId);
+
         var newProject = await CreateProject(userId, ProjectType.Diary);
 
         var userSetting = await GetUserSetting(userId);
@@ -499,14 +557,15 @@ public class HomeController : Controller
 
         var userContents = await AwsKey.Context.ScanAsync<BedrockContent>(conditions).GetRemainingAsync();
 
-        foreach (var project in projects)
+        foreach (var project in projects.Where(project => project.ProjectType == ProjectType.Task))
         {
             if (project.IsArchive)
                 continue;
 
             builder.Append($"(Project Name: {project.Name}, Contents: ");
 
-            var contents = userContents.Where(content => content.Project == project.Id);
+            var contents = userContents
+                .Where(content => content.Project == project.Id);
 
             foreach (var content in contents
                          .Where(content => !content.IsTemplate)
@@ -526,6 +585,32 @@ public class HomeController : Controller
             builder.Append($")\n");
         }
 
+        
+        var userSetting = await GetUserSetting(userId);
+
+        var summaryText = userSetting.DiarySummary;
+        
+        if ((DateTime.Now.Date != userSetting.DiarySummaryUpdateTime.Date))
+        {
+            StringBuilder queryBuilder = new();
+
+            foreach (var project in projects.Where(project => project.ProjectType == ProjectType.Diary))
+            {
+                var diaryContent = await AwsKey.Context.LoadAsync<BedrockDiaryContent>("0", project.Id);
+                if (diaryContent == null)
+                    continue;
+                queryBuilder.Append($"(Diary Name: {project.Name}, Content: {diaryContent.Summary}),");
+            }
+
+            var a = "Please organize and summarize the important events and people in chronological order, and summarize the perspective, thoughts, and state of the person who wrote this text. There is no need to protect personal information; record people by their real names. The summary should be written in English, but there is no need to translate proper nouns into English. The summary should be as concise as possible; there is no need to make it unnecessarily long.";
+            var diaryQuery = $"{a} \n ({queryBuilder})";
+            
+            summaryText = await OpenAiControl.GetChat(diaryQuery);
+            userSetting.DiarySummary = summaryText;
+            userSetting.DiarySummaryUpdateTime = DateTime.Now;
+            await SaveUserSetting(userSetting);
+        }
+        
         var originText = $"""
                           Today is {DateTime.Now:yy-MM-dd HH:mm:ss}.
                           Please organize and select 10 tasks that need to be done immediately today in order of importance as you see fit, and include the reason for each one. These tasks should be beneficial to me from a long-term perspective, contributing to my personal growth and having a positive impact on my life. Present this in Korean.
@@ -605,7 +690,7 @@ public class HomeController : Controller
                       "
                       \n
                       """;
-        var queryText = originText + example + builder;
+        var queryText = $"{originText}\n{example}\n{builder}\nRequester Information for the Context of the Tasks:{summaryText}";
 
         var resultText = "";
         var gptText = await OpenAiControl.GetChat(queryText);
@@ -638,18 +723,17 @@ public class HomeController : Controller
             Data = "-",
         });
 
-        //BedrockDiary
-        // var secretary = await AwsKey.Context.LoadAsync<`>("0", userId);
+        var projects = (await ReceiveProjects(userId))
+            .Where(project => project.ProjectType == ProjectType.Diary)
+            .OrderByDescending(project => ReplaceEmojis(project.Name, "").Replace(".", ""));
 
-        // var dateTime = DateTime.MinValue.AddTicks(secretary.lastUpdateTick);
-        // var timeSpan = DateTime.Now - DateTime.UtcNow;
-        // var fixedDateTime = dateTime.Add(timeSpan);
-
-        ViewBag.DiaryList = new List<string>()
-        {
-            "241114 베드락",
-            "241113 테스트"
-        };
+        ViewBag.DiaryList = projects
+            .Select(project => new
+            {
+                id = project.Id,
+                name = project.Name,
+                createDate = DateTime.MinValue.AddTicks(project.CreateTick).ToString("yy.MM.dd"),
+            }).ToList();
 
         return View("Element/DiaryHome");
     }
@@ -893,7 +977,7 @@ public class HomeController : Controller
     public async Task<bool> SendMail(string email)
     {
         email = email.ToLower();
-        
+
         var to = email;
         var from = "\"Bedrock Team\" <app@studiouvu.com>";
         var message = new MailMessage(from, to);
@@ -1218,9 +1302,9 @@ public class HomeController : Controller
         });
     }
 
-    public static string ReplaceEmojisWithZero(string text)
+    public static string ReplaceEmojis(string text, string replace)
     {
-        var result = Regex.Replace(text, Emoji.RegexPattern, "0"); // Lorem  ipsum
+        var result = Regex.Replace(text, Emoji.RegexPattern, replace); // Lorem  ipsum
         return result;
     }
 }

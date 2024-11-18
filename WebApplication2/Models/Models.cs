@@ -43,6 +43,16 @@ public class BedrockProject
     public ProjectType ProjectType;
 }
 
+public class BedrockDiaryContent
+{
+    public string Partition;
+    public string ProjectId;
+    public string UserId;
+    public long LastTick;
+    public string Content;
+    public string Summary;
+}
+
 public enum ProjectType
 {
     Task,
@@ -78,6 +88,8 @@ public class BedrockUserSetting
     public bool ShowDate;
     public bool ShowDoneTask;
     public string CurrentProject;
+    public string DiarySummary;
+    public DateTime DiarySummaryUpdateTime;
 }
 
 public class BedrockSecretary

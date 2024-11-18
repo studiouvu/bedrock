@@ -145,17 +145,8 @@
     @*     </div> *@
     @* </div> *@
 
-    @* <div *@
-    @*     style="width: 100%; position: fixed; overflow: hidden; top: 0px;  z-index: 2; background-color: #0f0f0f; "> *@
-    @*     <div *@
-    @*         style="width: 100%; margin-top: 8px; margin-bottom: 10px; display: flex;"> *@
-    @*         <div id="project-name-header" style="color:#919191; margin: auto;"></div> *@
-    @*     </div> *@
-    @* </div> *@
-
     <div style="display: flex; overflow: hidden; height: 100%; max-width: 100%; ">
         <div class="hide-on-small display-on-medium" style="margin-left: 230px;"></div>
-        @* <div class="display-on-small" style="min-width: 12px;"></div> *@
         <div style="padding-top: 5px; width: 100%; margin-bottom: 200px; min-height: 600px; margin-left: 12px; margin-right: 12px;">
             <div
                 style="width: 100%; margin-left: auto; margin-right: auto; max-width: 600px; border-radius: 10px;">
@@ -164,7 +155,6 @@
                     <div id="project-name-header"
                          style="color:#919191; margin-top: 8px; margin-bottom: 8px;">
                     </div>
-                    @* <div class="hide-on-small" style="height: 24px;"></div> *@
                     <div
                         style="color:#919191; width: 100%; max-width: 600px; overflow: hidden; border: none; outline: none; padding-bottom: 5px; display: flex;">
                         @* <div class="hide-on-small" *@
@@ -190,15 +180,6 @@
                 <div style="width: 100%; height: 100%; margin-top: 70px;">
                     <div id="project-name-holder" style="display: flex; border: none; outline: none;">
                         <div style="display: flex; align-items: center; width: 100%; height: 100%">
-                            @* <input *@
-                            @*     id="project-name" *@
-                            @*     class="title-input input-box" *@
-                            @*     type="text" *@
-                            @*     style="height:100%; color: transparent;" *@
-                            @*     placeholder="" *@
-                            @*     value="-" *@
-                            @*     onfocusout="InputProjectName()" *@
-                            @*     onkeyup="InputProjectName()"/> *@
                             <div
                                 id="project-name"
                                 class="title-input input-box"
@@ -206,17 +187,18 @@
                                 placeholder="-"
                                 aria-label="프로젝트 이름 입력"
                                 onblur="InputProjectName()"
-                                onkeyup="InputProjectName()">🐸Test</div>
-                            @* <div class="emoji-preview title-input" id="emoji-preview"></div> *@
+                                onkeyup="InputProjectName()">
+                            </div>
                         </div>
                     </div>
                     <div style="border: none; outline: none; padding-bottom: 4px; display: flex;">
                         <div
                             onclick="ShowDoneTask()"
-                            class="click-color unselectable"
+                            class="click-color unselectable input-hide"
                             style="cursor: pointer; height: 100%; border-radius: 10px; padding: 4px;">
                             <div
-                                class="text-center input-hide">
+                                id = "task-count-hold"
+                                class="text-center">
                                 <font color="#919191" style="display: flex;">
                                     ✔️
                                     <div id="task-count">
@@ -329,14 +311,6 @@
         if (isMobile)
             ShowMenu(false);
         SetMobile(isMobile);
-        
-        /*document.addEventListener('keydown', function (event) {
-            var key = event.key || event.keyCode;
-
-            if (key == 'Enter') {
-            }
-            return false;
-        });*/
 
         document.getElementById("input1").addEventListener("keyup", function (event) {
             if (event.key === "Shift") {
@@ -378,7 +352,7 @@
 
         $('#home-button').html(ToTwemoji("🌞Secretary"));
         $('#journal-button').html(ToTwemoji("🦐Journal"));
-
+        
         /*const myDivs = document.querySelectorAll('.click-animate');
 
         myDivs.forEach((div) => {
@@ -997,6 +971,7 @@
         $('#tblContent').html("<div class='fade-in-long' style='opacity: 0; min-height: 300px; border-radius: 15px; background-color: #1b1c1c'></div>");
         $('#task-count').html("1시간마다 자동으로 업데이트됩니다.");
         $('#project-name').html(ToTwemoji("🌞Secretary"));
+        $('#project-name-header').html(ToTwemoji("🌞Secretary"));
 
         depth = 0;
         document.title = "🌞Secretary - Bedrock";
@@ -1036,6 +1011,7 @@
 
         $('#tblContent').html("<div class='fade-in-long' style='opacity: 0; min-height: 300px; border-radius: 15px; background-color: #1b1c1c'></div>");
         $('#project-name').html(ToTwemoji("🦐Journal"));
+        $('#project-name-header').html(ToTwemoji("🦐Journal"));
         depth = 0;
         document.title = "🦐Journal - Bedrock";
 
@@ -1102,6 +1078,41 @@
             })
             .catch(error => {
                 $('#tblContent').html("fail");
+            });
+    }
+
+    function InputDiaryContent() {
+        let typped = document.getElementById('diary-content').innerHTML;
+        const replacedImgStr = typped.replace(/<img[^>]*alt="([^"]*)"[^>]*>/g, '$1');
+        const finalStr = replacedImgStr.replace(/<[^>]+>/g, '');
+
+        SendDiaryContent(replacedImgStr);
+    }
+
+    function SendDiaryContent(name) {
+        console.log(name);
+        fetch('@Url.Action("ReceiveSendDiaryContent")', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json; charset=utf-8'
+            },
+            body: JSON.stringify({
+                deviceId: deviceId,
+                data: name
+            })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('네트워크 응답에 문제가 있습니다.');
+                }
+                return response.text();
+            })
+            .then(data => {
+                GetProjectList();
+                GetLastProjects();
+            })
+            .catch(error => {
             });
     }
 </script>
