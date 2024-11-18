@@ -1034,7 +1034,7 @@
                 return response.text();
             })
             .then(data => {
-                $('#tblContent').html(data);
+                $('#tblContent').html(ToTwemoji(data));
 
                 GetLastProjects();
                 GetProjectList();
