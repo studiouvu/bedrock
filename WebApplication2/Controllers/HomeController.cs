@@ -693,7 +693,7 @@ public class HomeController : Controller
     [HttpPost]
     public async Task<bool> ReceiveEmailCode([FromBody] DataModel model)
     {
-        var emailId = model.Content;
+        var emailId = model.Content.ToLower();
         var code = model.Data;
 
         var verify = await VerifyCode(emailId, code);
@@ -892,6 +892,8 @@ public class HomeController : Controller
 
     public async Task<bool> SendMail(string email)
     {
+        email = email.ToLower();
+        
         var to = email;
         var from = "\"Bedrock Team\" <app@studiouvu.com>";
         var message = new MailMessage(from, to);
