@@ -1034,7 +1034,11 @@
                 return response.text();
             })
             .then(data => {
-                $('#tblContent').html(ToTwemoji(data));
+                console.log(data);
+                $('#tblContent').html(data);
+                twemoji.parse(document.getElementById('tblContent'),{
+                    className: 'twemoji',
+                });
 
                 GetLastProjects();
                 GetProjectList();
