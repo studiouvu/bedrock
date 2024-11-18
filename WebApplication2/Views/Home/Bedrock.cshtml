@@ -6,69 +6,178 @@
             " alt="Loading Icon">
 </div>
 <div id="main" class="text-left" style="display: none; width: 100%;">
-    <div class="hide-on-small">
-        <div id="floating"
-             style="
+<div>
+    <div class="main-menu"
+         style="
                  position: fixed;
-                 left : 14px;
+                 left : 0px;
                  top: 0px;
-                 width: 230px;
+                 z-index: 2;
                  height: 100%;
                  float: left;
                  flex-direction: column;
                   display: flex;
                   margin-left: auto; 
-                  margin-right: auto; ">
-            <div style="margin-top: 20px;">
-                <img
-                    onclick="PageReload()"
-                    class="click-animate unselectable"
-                    src="~/images/AppIconTrans.png"
-                    style="cursor: pointer; height:22px; margin-left: 5px;">
-            </div>
-            <div style="min-height: 25px;"></div>
+                  margin-right: auto;
+                  padding-left: 10px;">
+        <div style="height: 8px;">
+        </div>
+        <img
+            class="hide-on-small"
+            src="~/images/AppIconTrans.png"
+            style="cursor: pointer; max-width: 22px; max-height:22px; margin-left: 4px; margin-bottom: 16px"/>
+        <div
+            id="home-button"
+            class="click-color unselectable"
+            onclick="GetGPT()"
+            style="width: 100%; margin-bottom: 5px; height: 32px; cursor: pointer; border-radius: 10px; padding: 4px 8px;">
+        </div>
+        <div
+            id="journal-button"
+            class="click-color unselectable"
+            onclick="ReceiveDiary()"
+            style="width: 100%; margin-bottom: 5px; height: 32px; cursor: pointer; border-radius: 10px; padding: 4px 8px;">
+            @* 🎐🏮💼🥞 *@
+        </div>
+        <div style='min-height:1px; width:100%; background-color:#1f1f1f;'></div>
+        <div id="project-list" class="scroll-vertical"
+             style="overscroll-behavior: contain; margin-top: 20px; flex: none; overflow-y: auto; max-height: 70%; white-space: nowrap; width: 100%;">
             <div
-                class="click-color unselectable"
-                onclick="GetGPT()"
-                style="width: 100%; margin-bottom: 5px; height: 32px; cursor: pointer; border-radius: 10px; padding: 4px 8px;">
-                ⛳Home
+                style="cursor: pointer; margin: 0px; background-color: #1f1f1f; border-radius: 10px; padding: 4px 8px;">
+                -
             </div>
-            <div style='min-height:1px; width:100%; background-color:#1f1f1f;'></div>
-            <div id="project-list" class="scroll-vertical"
-                 style="overscroll-behavior: contain; margin-top: 20px; flex: none; overflow-y: auto; max-height: 70%; white-space: nowrap; width: 100%;">
-                <div
-                    style="cursor: pointer; margin: 0px; background-color: #1f1f1f; border-radius: 10px; padding: 4px 8px;">
-                    -
+        </div>
+        <div
+            onclick="CreateNewProject()"
+            class="click-color unselectable"
+            style="float:left; cursor: pointer; width: 128px; margin-top: 10px; background-color: #1f1f1f; border-radius: 10px; padding: 4px 8px;">
+            <div class="text-center">+</div>
+        </div>
+        <p id="user-id" class="hide-on-small" style="font-size: 12px; margin-top: auto;  color:#919191;"></p>
+    </div>
+</div>
+
+<div class="display-on-small">
+    <div
+        style="width: 100%; min-height: 46px; position: fixed;
+        flex-direction: column;
+        justify-content: center;
+        display: flex;
+        overflow: hidden; bottom: 0px;  z-index: 3; background-color: #0f0f0f; ">
+        <div style='min-height:1px; width:100%; background-color:#1f1f1f;'></div>
+        <div
+            style="width: 100%; min-height: 100%;  margin-top: auto; margin-bottom: auto;
+            color: #919191;
+            display: flex; justify-content: space-around; align-items: center;">
+            <div class="unselectable"
+                 onclick="ShowMenu(true)"
+                 style="width: 100%; height: 100%; text-align: center;">
+                <div style="font-size: 120%;">
+                    <img
+                        src="~/72x72/26fa.png"
+                        style=" height:22px;">
+                </div>
+                <div style="font-size: 60%;">
+                    Project
                 </div>
             </div>
-            <div
-                onclick="CreateNewProject()"
-                class="click-color unselectable"
-                style="float:left; cursor: pointer; width: 128px; margin-top: 10px; background-color: #1f1f1f; border-radius: 10px; padding: 4px 8px;">
-                <div class="text-center">+</div>
+            <div class="unselectable"
+                 onclick="ShowMenu(false)"
+                 style="width: 100%; height: 100%; cursor: pointer; text-align: center;">
+                <div style="font-size: 120%;">
+                    <img
+                        src="~/72x72/2611.png"
+                        style=" height:20px;">
+                </div>
+                <div style="font-size: 60%;">
+                    Task
+                </div>
             </div>
-            <p id="user-id" style="font-size: 12px; margin-top: auto;  color:#919191;"></p>
+            <div class="unselectable"
+                 onclick="GetGPT()"
+                 style="width: 100%; height: 100%; cursor: pointer; text-align: center;">
+                <div style="font-size: 120%;">
+                    <img
+                        src="~/72x72/1f31e.png"
+                        style=" height:22px;">
+                </div>
+                <div style="font-size: 60%;">
+                    Secretary
+                </div>
+            </div>
+            <div class="unselectable"
+                 onclick="ReceiveDiary()"
+                 style="width: 100%; height: 100%; cursor: pointer; text-align: center;">
+                <div style="font-size: 120%;">
+                    <img
+                        src="~/72x72/1f990.png"
+                        style=" height:22px;">
+                </div>
+                <div style="font-size: 60%;">
+                    Journal
+                </div>
+            </div>
         </div>
     </div>
-    <div style="display: flex; height: 100%; max-width: 100%; ">
+</div>
+
+<div class="main-view">
+    @* <div class="display-on-small"> *@
+    @*     <div *@
+    @*         style="width: 100%; min-height: 50px; position: fixed; *@
+    @*             flex-direction: column; *@
+    @*             justify-content: center; *@
+    @*             display: flex; *@
+    @*             overflow: hidden; bottom: 0px; *@
+    @*             background-color: #0f0f0f; *@
+    @*               z-index: 3;"> *@
+    @*         <div style='min-height:1px; width:100%; background-color:#1f1f1f;'></div> *@
+    @*         <div *@
+    @*             style="width: 100%; min-height: 100%;  margin-top: auto; margin-bottom: auto; *@
+    @*             color: #919191; *@
+    @*             display: flex; justify-content: space-around; align-items: center;"> *@
+    @*             <div class="click-color unselectable" style="background-color: #1b1c1c; *@
+    @*                     width: 100%; min-height: 100%; border-radius: 10px;"> *@
+    @*                 <div class="text-center"> *@
+    @*                     🎏 목록 *@
+    @*                 </div> *@
+    @*             </div> *@
+    @*         </div> *@
+    @*     </div> *@
+    @* </div> *@
+
+    @* <div *@
+    @*     style="width: 100%; position: fixed; overflow: hidden; top: 0px;  z-index: 2; background-color: #0f0f0f; "> *@
+    @*     <div *@
+    @*         style="width: 100%; margin-top: 8px; margin-bottom: 10px; display: flex;"> *@
+    @*         <div id="project-name-header" style="color:#919191; margin: auto;"></div> *@
+    @*     </div> *@
+    @* </div> *@
+
+    <div style="display: flex; overflow: hidden; height: 100%; max-width: 100%; ">
         <div class="hide-on-small display-on-medium" style="margin-left: 230px;"></div>
-        <div class="display-on-small" style="min-width: 12px;"></div>
-        <div style="padding-top: 5px; width: 100%; margin-bottom: 200px; min-height: 600px; ">
+        @* <div class="display-on-small" style="min-width: 12px;"></div> *@
+        <div style="padding-top: 5px; width: 100%; margin-bottom: 200px; min-height: 600px; margin-left: 12px; margin-right: 12px;">
             <div
                 style="width: 100%; margin-left: auto; margin-right: auto; max-width: 600px; border-radius: 10px;">
-                <font color="#919191">
+                <div
+                    style="width: 100%; position: fixed; overflow: hidden; top: 0px; z-index: 1; background-color: #0f0f0f; ">
+                    <div id="project-name-header"
+                         style="color:#919191; margin-top: 8px; margin-bottom: 8px;">
+                    </div>
+                    @* <div class="hide-on-small" style="height: 24px;"></div> *@
                     <div
-                        style="position: fixed; top: 0px; width: 100%; max-width: 600px; z-index: 1; background-color: #0f0f0f; border: none; outline: none; padding-bottom: 5px; padding-top: 34px; display: flex; margin-bottom: 15px">
-                        <div class="hide-on-small"
-                             style="width: 28px; height: 100%; padding: 6px; border-radius: 10px; margin-right: 6px;">
-                            <div class="text-center">
-                                🎏
-                            </div>
-                        </div>
+                        style="color:#919191; width: 100%; max-width: 600px; overflow: hidden; border: none; outline: none; padding-bottom: 5px; display: flex;">
+                        @* <div class="hide-on-small" *@
+                        @*      style="width: 28px; height: 100%; padding: 6px; border-radius: 10px; margin-right: 6px;"> *@
+                        @*     <div class="text-center"> *@
+                        @*         🎏 *@
+                        @*     </div> *@
+                        @* </div> *@
                         <div
                             id="last-projects"
                             class="scroll-hoizontal"
-                            style="height: 100%; border: none; outline: none; display: flex; overflow: scroll;  white-space: nowrap;">
+                            style="height: 100%; padding-right: 15px; border: none; outline: none; display: flex; overflow: scroll;  white-space: nowrap;">
                             <div
                                 style="cursor: pointer; height: 100%; background-color: #1f1f1f; padding: 6px 9px; border-radius: 10px; margin-right: 6px;">
                                 <div class="text-center">
@@ -77,24 +186,29 @@
                             </div>
                         </div>
                     </div>
-                </font>
+                </div>
 
-                <div style="width: 100%; height: 100%; margin-top: 65px;">
+                <div style="width: 100%; height: 100%; margin-top: 70px;">
                     <div id="project-name-holder" style="display: flex; border: none; outline: none;">
-                        <div style="display: flex; align-items: center">
-                            @* <div *@
-                            @*     class="click-animate unselectable" *@
-                            @*     style="cursor: pointer; width: 22px; height: 22px; border: solid #cdd0d4;  border-width:1px; margin-bottom: 4px; margin-right: 8px; border-radius: 5px;"> *@
-                            @* </div> *@
-                            <input
+                        <div style="display: flex; align-items: center; width: 100%; height: 100%">
+                            @* <input *@
+                            @*     id="project-name" *@
+                            @*     class="title-input input-box" *@
+                            @*     type="text" *@
+                            @*     style="height:100%; color: transparent;" *@
+                            @*     placeholder="" *@
+                            @*     value="-" *@
+                            @*     onfocusout="InputProjectName()" *@
+                            @*     onkeyup="InputProjectName()"/> *@
+                            <div
                                 id="project-name"
                                 class="title-input input-box"
-                                type="text"
-                                style="height:100%"
-                                placeholder=""
-                                value="-"
-                                onfocusout="InputProjectName()"
-                                onkeyup="InputProjectName()"/>
+                                contenteditable="true"
+                                placeholder="-"
+                                aria-label="프로젝트 이름 입력"
+                                onblur="InputProjectName()"
+                                onkeyup="InputProjectName()">🐸Test</div>
+                            @* <div class="emoji-preview title-input" id="emoji-preview"></div> *@
                         </div>
                     </div>
                     <div style="border: none; outline: none; padding-bottom: 4px; display: flex;">
@@ -103,7 +217,7 @@
                             class="click-color unselectable"
                             style="cursor: pointer; height: 100%; border-radius: 10px; padding: 4px;">
                             <div
-                                class="text-center">
+                                class="text-center input-hide">
                                 <font color="#919191" style="display: flex;">
                                     ✔️
                                     <div id="task-count">
@@ -193,20 +307,30 @@
                 </div>
             </div>
         </div>
-        <div class="display-on-small" style="min-width: 12px;"></div>
+        @* <div class="display-on-small" style="min-width: 12px;"></div> *@
     </div>
+</div>
 </div>
 
 @section Scripts
 {
+    <script src="~/dist/twemoji.js"></script>
+
     <script type="text/javascript">
     var deviceId = "@ViewBag.DeviceId";
     var emailId = "";
     var depth = 0;
     var isShift = false;
     var init = false;
+    var isMobile = false;
 
     $(function () {
+        const width = window.innerWidth;
+        isMobile = width <= 900;
+        if (isMobile)
+            ShowMenu(false);
+        SetMobile(isMobile);
+        
         /*document.addEventListener('keydown', function (event) {
             var key = event.key || event.keyCode;
 
@@ -249,7 +373,12 @@
             }
         });
 
-        ReceiveDeviceId();
+        ReceiveFullContent();
+        ReceiveUserId();
+        GetTaskCount();
+
+        $('#home-button').html(ToTwemoji("🌞Secretary"));
+        $('#journal-button').html(ToTwemoji("🦐Journal"));
 
         /*const myDivs = document.querySelectorAll('.click-animate');
 
@@ -260,38 +389,42 @@
         });*/
     });
 
-    function ReceiveDeviceId() {
-        fetch('@Url.Action("ReceiveDeviceId")', {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json; charset=utf-8'
-            },
-            body: JSON.stringify({deviceId: deviceId})
-        })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('fail to load user id');
-                }
-                return response.text();
-            })
-            .then(data => {
-                deviceId = data;
-                ReceiveFullContent();
-                ReceiveUserId();
-                GetTaskCount();
-            })
-            .catch(error => {
+    function ShowTaskInput(show) {
+        const elements = document.querySelectorAll('.input-hide');
+        elements.forEach(element => {
+            element.style.display = show ? 'block' : 'none';
+        });
+    }
 
+    function ShowMenu(show) {
+        const width = window.innerWidth;
+        const isMobile = width <= 900;
+        
+        if (!isMobile)
+            return;        
+        {
+            const elements = document.querySelectorAll('.main-menu');
+            elements.forEach(element => {
+                element.style.display = show ? 'block' : 'none';
             });
+        }
+        {
+            const elements = document.querySelectorAll('.main-view');
+            elements.forEach(element => {
+                element.style.display = show ? 'none' : 'block';
+            });
+        }
+    }
+
+    function SetMobile(isMobile) {
+        const elements = document.querySelectorAll('.main-menu');
+        elements.forEach(element => {
+            element.style.backgroundColor = isMobile ? '#0f0f0f' : 'transparent';
+            element.style.width = isMobile ? '100%' : '230px';
+        });
     }
 
     function ReceiveFullContent() {
-        const elements = document.querySelectorAll('.input-hide');
-        elements.forEach(element => {
-            element.style.display = 'block';
-        });
-
         ReceiveContent();
         GetTaskCount();
         ReceiveProjectName();
@@ -315,13 +448,18 @@
                 if (!response.ok) {
                     throw new Error('fail to load user id');
                 }
-                return response.text();
+                return response.json();
             })
             .then(data => {
-                $('#tblContent').html(data);
+                $('#tblContent').html(ToTwemoji(data.content));
                 
-                if (init==false)
-                {
+                if (data.projectType == "Task") {
+                    ShowTaskInput(true);
+                } else {
+                    ShowTaskInput(false);
+                }
+
+                if (init == false) {
                     const loader = document.getElementById('loader');
                     loader.classList.add('hidden');
 
@@ -380,12 +518,30 @@
                 return response.text();
             })
             .then(data => {
-                document.getElementById('project-name').value = data;
+                const revisedData = ToTwemoji(data);
+                $('#project-name').html(revisedData);
+                $('#project-name-header').html(revisedData);
                 document.title = data + " - Bedrock";
             })
             .catch(error => {
                 $('#project-name').html("fail");
             });
+    }
+
+    function ToTwemoji(data) {
+        return twemoji.parse(data , {
+            className: 'twemoji',
+        });
+        /*if (isMobile)
+            return twemoji.parse(data , {
+                className: 'twemoji',
+            });
+        else
+            return twemoji.parse(data , {
+                folder: 'svg',
+                ext: '.svg',
+                className: 'twemoji',
+            });*/
     }
 
     function ClickDone(id, destroy) {
@@ -573,11 +729,18 @@
     }
 
     function InputProjectName() {
-        let typped = document.getElementById('project-name').value;
-        SendProjectName(typped);
+        let typped = document.getElementById('project-name').innerHTML;
+        const replacedImgStr = typped.replace(/<img[^>]*alt="([^"]*)"[^>]*>/g, '$1');
+        const finalStr = replacedImgStr.replace(/<[^>]+>/g, '');
+
+        const revisedData = ToTwemoji(finalStr);
+        $('#project-name-header').html(revisedData);
+        
+        SendProjectName(finalStr);
     }
 
     function SendProjectName(name) {
+        console.log(name);
         fetch('@Url.Action("ReceiveSendProjectName")', {
             method: 'POST',
             credentials: 'include',
@@ -678,9 +841,21 @@
                 if (!response.ok) {
                     throw new Error('네트워크 응답에 문제가 있습니다.');
                 }
-                return response.text();
+                return response.json();
             }).then(data => {
-            $('#last-projects').html(data);
+
+            var result = "";
+
+            data.content.forEach(element => {
+                var e = data.html
+                    .replace('projectNameRaw', element.name)
+                    .replace('projectName', ToTwemoji(element.name))
+                    .replace('projectId', element.id);
+
+                result += e;
+            });
+                
+            $('#last-projects').html(result);
         })
             .catch(error => {
                 $('#last-projects').html("fail");
@@ -703,9 +878,24 @@
                 if (!response.ok) {
                     throw new Error('네트워크 응답에 문제가 있습니다.');
                 }
-                return response.text();
+                return response.json();
             }).then(data => {
-            $('#project-list').html(data);
+            
+            var result = "";
+            
+            data.content.forEach(element => {
+                const name = ToTwemoji(element.name);
+
+                var e = data.html
+                    .replace('projectNameRaw', element.name)
+                    .replace('projectName', name)
+                    .replace('projectId', element.id)
+                    .replace('backgroundColor', element.backgroundColor);
+
+                result += e;
+            });
+            
+            $('#project-list').html(result);
         })
             .catch(error => {
                 $('#project-list').html("fail");
@@ -728,7 +918,9 @@
                 return response.text();
             })
             .then(data => {
+                scrollToTop();
                 ReceiveFullContent();
+                ShowMenu(false);
             })
             .catch(error => {
                 $('#last-projects').html("fail");
@@ -736,10 +928,12 @@
     }
 
     function ChangeProject(projectId, projectName) {
+        ShowMenu(false);
+        
         $('#tblContent').html("<div class='fade-in' style='opacity: 0; min-height: 100px; border-radius: 15px; background-color: #1b1c1c'></div>");
-        document.getElementById('project-name').value = projectName;
-        depth = 0;
+        $('#project-name').html(ToTwemoji(projectName));
         $('#input-tab').html("");
+        depth = 0;
         scrollToTop();
 
         fetch('@Url.Action("ReceiveChangeProject")', {
@@ -797,18 +991,16 @@
 
     function GetGPT() {
         scrollToTop();
+        ShowMenu(false);
 
-        const elements = document.querySelectorAll('.input-hide');
-        elements.forEach(element => {
-            element.style.display = 'none';
-        });
+        ShowTaskInput(false);
 
         $('#tblContent').html("<div class='fade-in-long' style='opacity: 0; min-height: 300px; border-radius: 15px; background-color: #1b1c1c'></div>");
         $('#task-count').html("1시간마다 자동으로 업데이트됩니다.");
+        $('#project-name').html(ToTwemoji("🌞Secretary"));
 
-        document.getElementById('project-name').value = "⛳Home";
         depth = 0;
-        document.title = "⛳Home - Bedrock";
+        document.title = "🌞Secretary - Bedrock";
 
         $('#input-tab').html("");
 
@@ -829,7 +1021,46 @@
                 return response.text();
             })
             .then(data => {
+                $('#tblContent').html(ToTwemoji(data));
+                GetLastProjects();
+                GetProjectList();
+            })
+            .catch(error => {
+                $('#last-projects').html("fail");
+            });
+    }
+
+    function ReceiveDiary() {
+        scrollToTop();
+        ShowTaskInput(false);
+        ShowMenu(false);
+
+        $('#tblContent').html("<div class='fade-in-long' style='opacity: 0; min-height: 300px; border-radius: 15px; background-color: #1b1c1c'></div>");
+        $('#project-name').html(ToTwemoji("🦐Journal"));
+        depth = 0;
+        document.title = "🦐Journal - Bedrock";
+
+        $('#input-tab').html("");
+
+        fetch('@Url.Action("ReceiveDiaryContent")', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json; charset=utf-8'
+            },
+            body: JSON.stringify({
+                deviceId: deviceId
+            })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('네트워크 응답에 문제가 있습니다.');
+                }
+                return response.text();
+            })
+            .then(data => {
                 $('#tblContent').html(data);
+
                 GetLastProjects();
                 GetProjectList();
             })
@@ -849,5 +1080,30 @@
         });
     }
 
+    function ReceiveCreateNewDiary() {
+        fetch('@Url.Action("ReceiveCreateNewDiary")', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json; charset=utf-8'
+            },
+            body:
+                JSON.stringify({
+                    DeviceId: deviceId,
+                })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('fail to load user id');
+                }
+                return response.text();
+            })
+            .then(data => {
+                ReceiveFullContent();
+            })
+            .catch(error => {
+                $('#tblContent').html("fail");
+            });
+    }
 </script>
 }

@@ -39,6 +39,13 @@ public class BedrockProject
     public long LastOpenTick;
     public bool IsArchive;
     public long ArchiveTick;
+    public ProjectType ProjectType;
+}
+
+public enum ProjectType
+{
+    Task,
+    Diary,
 }
 
 public class BedrockDeviceId
@@ -77,5 +84,15 @@ public class BedrockSecretary
     public string UserId;
     public string Partition;
     public string Content;
+    public long lastUpdateTick;
+}
+
+public class BedrockDiary
+{
+    public string UserId;
+    public string Partition;
+    public string Content;
+    public string GptContent;
+    public long createTick;
     public long lastUpdateTick;
 }

@@ -11,9 +11,11 @@ using Amazon.Runtime;
 using Bedrock.Models;
 using GEmojiSharp;
 using Markdig;
+using Markdig.Extensions.Emoji;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using TwemojiSharp;
 
 namespace Bedrock.Controllers;
 
@@ -37,13 +39,15 @@ public class HomeController : Controller
 
     public async Task<IActionResult> Bedrock(string deviceId)
     {
-        //최적화 가능할듯
         if (string.IsNullOrEmpty(deviceId))
             deviceId = GetDeviceId();
 
         if (string.IsNullOrEmpty(deviceId))
         {
             ViewBag.Login = false;
+
+            deviceId = Guid.NewGuid().ToString();
+            await GetUserId(deviceId);
         }
         else
         {
@@ -51,7 +55,21 @@ public class HomeController : Controller
             var emailId = await GetEmailId(userId);
 
             ViewBag.Login = string.IsNullOrEmpty(emailId) == false;
+
+            var userSetting = await GetUserSetting(userId);
+            var currentProject = await GetProject(userSetting.CurrentProject);
+
+            if (currentProject == null)
+            {
+                var projects = await ReceiveProjects(userId);
+                var targetProject = projects.OrderByDescending(project => project.LastOpenTick).FirstOrDefault()?.Id;
+                if (targetProject != null)
+                    userSetting.CurrentProject = targetProject;
+            }
         }
+
+        HttpContext.Session.SetString("deviceId", deviceId);
+        HttpContext.Response.Cookies.Append("deviceId", deviceId);
 
         ViewBag.deviceId = deviceId;
 
@@ -59,34 +77,11 @@ public class HomeController : Controller
     }
 
     [HttpPost]
-    public async Task<string> ReceiveDeviceId([FromBody] DataModel data)
-    {
-        var deviceId = data.DeviceId;
-
-        if (string.IsNullOrEmpty(deviceId))
-        {
-            deviceId = GetDeviceId();
-        }
-
-        if (string.IsNullOrEmpty(deviceId))
-        {
-            deviceId = Guid.NewGuid().ToString();
-            await GetUserId(deviceId);
-        }
-
-        HttpContext.Session.SetString("deviceId", deviceId);
-        HttpContext.Response.Cookies.Append("deviceId", deviceId);
-
-        return deviceId;
-    }
-
-
-    [HttpPost]
     public async Task<bool> ReceiveCreateProject([FromBody] DataModel data)
     {
         var deviceId = data.DeviceId;
         var userId = await GetUserId(deviceId);
-        var newProject = await CreateProject(userId);
+        var newProject = await CreateProject(userId, ProjectType.Task);
 
         var userSetting = await GetUserSetting(userId);
         userSetting.CurrentProject = newProject.Id;
@@ -187,7 +182,7 @@ public class HomeController : Controller
 
         return true;
     }
-    
+
     private string GetRandomEmoji()
     {
         var emojiList = new List<string>()
@@ -211,75 +206,85 @@ public class HomeController : Controller
             "🔥",
             "🌞",
             "🦕",
-            "🧗",
-            "🚣",
             "🎆",
             "🥊",
             "🍟",
             "🍔",
-            "🍄‍🟫",
+            "😶‍🌫️",
             "🌵",
             "🚃",
             "🥞",
             "🔔",
+            "🐋",
+            "🍄",
         };
         var emoji = emojiList[new Random().Next(0, emojiList.Count)];
         return emoji;
     }
 
     [HttpPost]
-    public async Task<string> ReceiveLastProjectList([FromBody] DataModel model)
+    public async Task<JsonResult> ReceiveLastProjectList([FromBody] DataModel model)
     {
         var deviceId = model.DeviceId;
         var userId = await GetUserId(deviceId);
         var projects = await ReceiveProjects(userId);
+        var userSetting = await GetUserSetting(userId);
 
-        var builder = new StringBuilder();
-
-        foreach (var project in projects.OrderByDescending(project => project.LastOpenTick))
-        {
-            var text = $"""
+        var template = $"""
                             <div
                             class="click-color unselectable"
-                            onclick="ChangeProject('{project.Id}','{project.Name}')"
+                            onclick="ChangeProject('projectId', 'projectNameRaw')"
                             style="cursor: pointer; height: 100%; background-color: #1f1f1f; padding: 6px 9px; border-radius: 10px; margin-right: 6px;">
                                   <div class="text-center">
-                                      {project.Name}
+                                      projectName
                                   </div>
                             </div>
                         """;
-            builder.Append(text);
-        }
 
-        return builder.ToString();
+        var data = new
+        {
+            html = template,
+            content = projects.OrderByDescending(project => project.LastOpenTick)
+                .Where(project => project.Id != userSetting.CurrentProject)
+                .Take(10)
+                .Select(project => new
+                {
+                    id = project.Id,
+                    name = project.Name,
+                }).ToList(),
+        };
+        return Json(data);
     }
 
     [HttpPost]
-    public async Task<string> ReceiveProjectList([FromBody] DataModel model)
+    public async Task<JsonResult> ReceiveProjectList([FromBody] DataModel model)
     {
         var deviceId = model.DeviceId;
         var userId = await GetUserId(deviceId);
         var userSetting = await GetUserSetting(userId);
-        var projects = await ReceiveProjects(userId);
+        var projects = (await ReceiveProjects(userId))
+            .Where(project => project.ProjectType == ProjectType.Task);
 
-        var builder = new StringBuilder();
-
-        foreach (var project in projects.OrderBy(project => ReplaceEmojisWithZero(project.Name)))
-        {
-            var backgroundColor = project.Id == userSetting.CurrentProject ? "#1f1f1f" : "transparent";
-
-            var text = $"""
+        var template = $"""
                             <div
                                 class="click-color unselectable"
-                               onclick="ChangeProject('{project.Id}','{project.Name}')"
-                               style="width:95%; cursor: pointer; background-color: {backgroundColor}; border-radius: 10px; padding: 4px 8px;">
-                               {project.Name}
+                               onclick="ChangeProject('projectId','projectNameRaw')"
+                               style="width:95%; cursor: pointer; background-color: backgroundColor; border-radius: 10px; padding: 4px 8px;">
+                               projectName
                             </div>
                         """;
-            builder.Append(text);
-        }
 
-        return builder.ToString();
+        var data = new
+        {
+            html = template,
+            content = projects.OrderBy(project => ReplaceEmojisWithZero(project.Name)).Select(project => new
+            {
+                id = project.Id,
+                name = project.Name,
+                backgroundColor = project.Id == userSetting.CurrentProject ? "#1f1f1f" : "transparent",
+            }).ToList(),
+        };
+        return Json(data);
     }
 
     [HttpPost]
@@ -301,18 +306,38 @@ public class HomeController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> ReceiveFullContent([FromBody] DataModel model)
+    public async Task<JsonResult> ReceiveFullContent([FromBody] DataModel model)
     {
         var deviceId = model.DeviceId;
         var userId = await GetUserId(deviceId);
         var userSetting = await GetUserSetting(userId);
 
-        var project = userSetting.CurrentProject;
+        var projectId = userSetting.CurrentProject;
 
+        var project = await GetProject(projectId);
+
+        if (project == null)
+        {
+            var data = new
+            {
+                content = "",
+                projectType = "Task",
+            };
+            return Json(data);
+        }
+
+        if (project.ProjectType == ProjectType.Task)
+            return await GetTaskProjectHtml(userId, projectId, userSetting);
+        else
+            return await GetDiaryProjectHtml(userId, projectId, userSetting);
+    }
+
+    private async Task<JsonResult> GetTaskProjectHtml(string userId, string projectId, BedrockUserSetting userSetting)
+    {
         // 보조 인덱스 이름 설정
         var indexName = "Partition-Project-index";
 
-        var filter = new QueryFilter("Project", QueryOperator.Equal, project);
+        var filter = new QueryFilter("Project", QueryOperator.Equal, projectId);
         filter.AddCondition("Partition", QueryOperator.Equal, "0");
 
         var query = new QueryOperationConfig
@@ -324,7 +349,14 @@ public class HomeController : Controller
         var contents = await AwsKey.Context.FromQueryAsync<BedrockContent>(query).GetRemainingAsync();
 
         if (contents.Count == 0)
-            return Content("");
+        {
+            var nullData = new
+            {
+                content = "",
+                projectType = "Task",
+            };
+            return Json(nullData);
+        }
 
         StringBuilder builder = new();
 
@@ -352,8 +384,44 @@ public class HomeController : Controller
 
         UpdateGptContent(userId);
 
-        return Content(builder.ToString(), "text/html");
+        var data = new
+        {
+            content = builder.ToString(),
+            projectType = "Task",
+        };
+        return Json(data);
     }
+
+    private async Task<JsonResult> GetDiaryProjectHtml(string userId, string projectId, BedrockUserSetting userSetting)
+    {
+        StringBuilder builder = new();
+        builder.Append("<div style='min-height:6px; width:100%;'></div>");
+        builder.Append("<div style='min-height:1px;  width:100%; background-color:#1f1f1f;'></div>");
+        builder.Append("<div style='width:100%;'>test</div>");
+
+        var data = new
+        {
+            content = builder.ToString(),
+            projectType = "Diary",
+        };
+        return Json(data);
+    }
+
+    [HttpPost]
+    public async Task<bool> ReceiveCreateNewDiary([FromBody] DataModel data)
+    {
+        var deviceId = data.DeviceId;
+        var userId = await GetUserId(deviceId);
+        var newProject = await CreateProject(userId, ProjectType.Diary);
+
+        var userSetting = await GetUserSetting(userId);
+        userSetting.CurrentProject = newProject.Id;
+
+        await SaveUserSetting(userSetting);
+
+        return true;
+    }
+
 
     [HttpPost]
     public async Task<string> ReceiveGptContent([FromBody] DataModel model)
@@ -383,7 +451,7 @@ public class HomeController : Controller
         return $"<br>{secretary.Content}<br><br><font color=\"#919191\">업데이트 된 시간 : {fixedDateTime:yy.MM.dd HH:mm}</font>";
     }
 
-    public async Task<bool> UpdateGptContent(string userId)
+    private async Task<bool> UpdateGptContent(string userId)
     {
         var emailId = await GetEmailId(userId);
 
@@ -391,7 +459,7 @@ public class HomeController : Controller
 
         if (!isLogin)
             return false;
-        
+
         var secretary = await AwsKey.Context.LoadAsync<BedrockSecretary>("0", userId);
 
         if (secretary != null)
@@ -434,6 +502,9 @@ public class HomeController : Controller
 
         foreach (var project in projects)
         {
+            if (project.IsArchive)
+                continue;
+
             builder.Append($"(Project Name: {project.Name}, Contents: ");
 
             var contents = userContents.Where(content => content.Project == project.Id);
@@ -443,7 +514,7 @@ public class HomeController : Controller
                 var dateTime = DateTime.MinValue.AddTicks(content.Tick);
                 var timeSpan = DateTime.Now - DateTime.UtcNow;
                 var fixedDateTime = dateTime.Add(timeSpan);
-                
+
                 var doneDateTime = DateTime.MinValue.AddTicks(content.DoneTick);
                 var fixedDoneDateTime = doneDateTime.Add(timeSpan);
 
@@ -455,24 +526,24 @@ public class HomeController : Controller
         }
 
         var originText = $"""
-                         Today is {DateTime.Now:yy-MM-dd HH:mm:ss}.
-                         Please organize and select 10 tasks that need to be done immediately today in order of importance as you see fit, and include the reason for each one. These tasks should be beneficial to me from a long-term perspective, contributing to my personal growth and having a positive impact on my life. Present this in Korean.
-                         
-                         If a task's Depth is higher than the task above it, it means it's a subtask of that task. ProjectName may indicate the deadline; for example, "24.11.25" means the task is due by November 25, 2024, and "24.11" means it's a task within November 2024 without a specific date.
-                         
-                         Attach the project name next to each task title in the format "1. Task Name - Project Name," and write the reason below on a new line.
-                         
-                         After that, please select 5 tasks that may not be immediate for today but are important for my life in the long term.
-                         
-                         Next, group the tasks by project within the same category, and select 10 important tasks per category, providing the reasons for each.
-                         
-                         Lastly, provide me with advice that could be helpful to me.
-                         """;
+                          Today is {DateTime.Now:yy-MM-dd HH:mm:ss}.
+                          Please organize and select 10 tasks that need to be done immediately today in order of importance as you see fit, and include the reason for each one. These tasks should be beneficial to me from a long-term perspective, contributing to my personal growth and having a positive impact on my life. Present this in Korean.
+
+                          If a task's Depth is higher than the task above it, it means it's a subtask of that task. ProjectName may indicate the deadline; for example, "24.11.25" means the task is due by November 25, 2024, and "24.11" means it's a task within November 2024 without a specific date.
+
+                          Attach the project name next to each task title in the format "1. Task Name - Project Name," and write the reason below on a new line.
+
+                          After that, please select 5 tasks that may not be immediate for today but are important for my life in the long term.
+
+                          Next, group the tasks by project within the same category, and select 10 important tasks per category, providing the reasons for each.
+
+                          Lastly, provide me with advice that could be helpful to me.
+                          """;
         //오늘은 {DateTime.Now:yy-MM-dd}일이야, 너가 생각하기에 중요한 순서대로 오늘 당장 해야 할 일을 정리해서 10개를 뽑아줘, 그리고 각각 그 이유도 같이 붙여줘 , 한국어로 , Depth는 상단의 Task의 Depth보다 높을 경우 그 task의 하위 task라는 것을 뜻해 , ProjectName은 기한을 뜻할 수도 있어 , 24.11.25 이런건 24년 11월 25일까지인거고 24.11 이건 24년 11월 중으로 일자는 확정되지 않은 task라는 것이야 ,  각 할일의 제목 옆에 프로젝트 이름을 붙여주고 "1. 태스크 이름 - 프로젝트 이름" 이런식으로 그리고 이유를 줄 바꿔서 밑에 써주고 , 그리고 그 다음엔 너가 보기에 같은 분류의 프로젝트 별로 일감들을 묶어서 분류 별 중요한 일 10가지를 뽑아서 이유와 함께 알려줘 , 마지막에는 나에게 도움이 될만한 조언을 적어줘
         var example = """
                       예시 : "
                       오늘 해야 할 일 10가지:
-                      
+
                       1. 통장 사본 제출하기 - 🥞.Daily
                           - 오늘 오후 6시까지 제출해야 하므로 매우 긴급합니다.
                       2. 베드락 iOS 출시 - 🦕24.11.12
@@ -493,11 +564,11 @@ public class HomeController : Controller
                           - 예정된 포스팅으로, 일정에 맞게 작성해야 합니다.
                       10. 진근 선배에게 연락하기 - 🐹11월
                           - 중요한 전달 사항이 있을 수 있으므로 빠르게 연락해야 합니다.
-                      
+
                       **카테고리별 그룹화 및 중요한 작업들**
-                      
+
                       ### 베드락 프로젝트
-                      
+
                       1. **베드락 iOS 출시** - 🦕24.11.12
                           - 오늘이 출시일이므로 최우선으로 처리해야 합니다.
                       2. **베드락 앱 추출하기** - 🦕24.11.12
@@ -508,26 +579,26 @@ public class HomeController : Controller
                           - 앱의 완성도를 높이기 위한 작업입니다.
                       5. **베드락 프로젝트 마무리하기** - 👹24.11.11
                           - 프로젝트의 성공적인 완료를 위해 남은 사항들을 정리해야 합니다.
-                      
+
                       ### 일상 업무
-                      
+
                       1. **통장 사본 제출하기** - 🥞.Daily
                           - 오늘 오후 6시까지 꼭 제출해야 하므로 긴급합니다.
                       2. **어도비 결제 취소 및 할인받기** - 🥞.Daily
                           - 불필요한 비용 지출을 막고 할인 혜택을 받기 위해 오늘 처리해야 합니다.
-                      
+
                       ### 연락
-                      
+
                       1. **진근 선배에게 연락하기** - 🐹11월
                           - 중요한 사항을 전달하거나 확인하기 위해 빠른 연락이 필요합니다.
                       2. **영현이와 약속 잡기** - 🐹11월
                           - 일정 조율을 위해 연락이 필요합니다.
-                      
+
                       ### 토스트 클럽
-                      
+
                       1. **안드로이드 내부 테스트 초대하기** - 🥞.Daily
                           - 앱의 기능 테스트와 피드백 수집을 위해 필요합니다.
-                      
+
                       **도움이 될 만한 조언** 오늘은 중요한 마감일과 급한 업무들이 많으니 우선순위를 정하여 하나씩 처리해 보세요. 가장 긴급한 일부터 시작하고, 중간중간 휴식을 취하며 효율적으로 업무를 진행하시길 바랍니다. 성공적인 하루 보내세요!  
                         
                       "
@@ -552,6 +623,34 @@ public class HomeController : Controller
         await AwsKey.Context.SaveAsync(bedrockSecretary);
 
         return true;
+    }
+
+    [HttpPost]
+    public async Task<ActionResult> ReceiveDiaryContent([FromBody] DataModel model)
+    {
+        var deviceId = model.DeviceId;
+        var userId = await GetUserId(deviceId);
+
+        await ReceiveChangeProject(new DataModel()
+        {
+            DeviceId = model.DeviceId,
+            Data = "-",
+        });
+
+        //BedrockDiary
+        // var secretary = await AwsKey.Context.LoadAsync<`>("0", userId);
+
+        // var dateTime = DateTime.MinValue.AddTicks(secretary.lastUpdateTick);
+        // var timeSpan = DateTime.Now - DateTime.UtcNow;
+        // var fixedDateTime = dateTime.Add(timeSpan);
+
+        ViewBag.DiaryList = new List<string>()
+        {
+            "241114 베드락",
+            "241113 테스트"
+        };
+
+        return View("Element/DiaryHome");
     }
 
     [HttpPost]
@@ -713,7 +812,7 @@ public class HomeController : Controller
         {
             new("Partition", ScanOperator.Equal, "0"),
             new("UserId", ScanOperator.Equal, userId),
-            new("IsArchive", ScanOperator.NotEqual, true)
+            new("IsArchive", ScanOperator.NotEqual, true),
         };
 
         var bedrockProjects = await AwsKey.Context.ScanAsync<BedrockProject>(conditions).GetRemainingAsync();
@@ -721,7 +820,7 @@ public class HomeController : Controller
         return bedrockProjects.ToList();
     }
 
-    public async Task<BedrockProject> CreateProject(string userId, string projectName = "")
+    public async Task<BedrockProject> CreateProject(string userId, ProjectType projectType, string projectName = "")
     {
         var projectId = Guid.NewGuid().ToString();
 
@@ -739,6 +838,7 @@ public class HomeController : Controller
             Name = projectName,
             CreateTick = DateTime.UtcNow.Ticks,
             LastOpenTick = DateTime.UtcNow.Ticks,
+            ProjectType = projectType,
         };
 
         await AwsKey.Context.SaveAsync(project);
@@ -748,6 +848,8 @@ public class HomeController : Controller
 
     public async Task<BedrockProject> GetProject(string projectId)
     {
+        if (string.IsNullOrEmpty(projectId))
+            return null;
         var project = await AwsKey.Context.LoadAsync<BedrockProject>("0", projectId);
         return project;
     }
@@ -896,7 +998,7 @@ public class HomeController : Controller
 
     public async Task<string> FirstSetting(string userId)
     {
-        var thirdProject = await CreateProject(userId, "Bedrock 아이디어");
+        var thirdProject = await CreateProject(userId, ProjectType.Task, "Bedrock 아이디어");
 
         await WriteContent(userId, thirdProject.Id, "device id 쿠키로 구현");
         await WriteContent(userId, thirdProject.Id, "uuid 4 사용하기", 1);
@@ -917,7 +1019,7 @@ public class HomeController : Controller
         await WriteContent(userId, thirdProject.Id, "콘텐츠 수정 기능 구현하기");
         await WriteContent(userId, thirdProject.Id, "클릭하면 input box로 변경되게", 1);
 
-        var secondProject = await CreateProject(userId, "사고 싶은 것");
+        var secondProject = await CreateProject(userId, ProjectType.Task, "사고 싶은 것");
 
         await WriteContent(userId, secondProject.Id, "에어팟 맥스");
         await WriteContent(userId, secondProject.Id, "맥미니 m4");
@@ -925,7 +1027,7 @@ public class HomeController : Controller
         await WriteContent(userId, secondProject.Id, "로지텍 키보드 mx keys");
 
         //todo! 지역별로 설정 필요
-        var firstProject = await CreateProject(userId, $"🦊{DateTime.Now:yy.MM.dd}");
+        var firstProject = await CreateProject(userId, ProjectType.Task, $"🦊{DateTime.Now:yy.MM.dd}");
 
         await WriteContent(userId, firstProject.Id, "안녕하세요🥳 새로 오신 것을 환영합니다!");
         await WriteContent(userId, firstProject.Id, "Bedrock은 가장 강력한 Todo 앱입니다.  \n자세한 건 아래 소개글을 읽어주세요");
@@ -1009,7 +1111,7 @@ public class HomeController : Controller
 
         var text = $"""
                     <div id='{content.Id}' style="max-width: 100%;">
-                        <div class="ob-box" onclick='' style="width=100%; cursor: text; background-color:transparent;">
+                        <div class="ob-box" onclick='' style="width:100%; cursor: text; background-color:transparent;">
                             <div style="width:100%; height:100%; align-items: center;">
                              <div style="width:100%; height:100%; display: flex;">
                                  {tabText}
