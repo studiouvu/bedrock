@@ -281,7 +281,9 @@ public class HomeController : Controller
         var data = new
         {
             html = template,
-            content = projects.OrderByDescending(project => project.LastOpenTick)
+            content = projects
+                .Where(project => project.ProjectType == ProjectType.Task)
+                .OrderByDescending(project => project.LastOpenTick)
                 .Where(project => project.Id != userSetting.CurrentProject)
                 .Take(10)
                 .Select(project => new
@@ -585,11 +587,11 @@ public class HomeController : Controller
             builder.Append($")\n");
         }
 
-        
+
         var userSetting = await GetUserSetting(userId);
 
         var summaryText = userSetting.DiarySummary;
-        
+
         if ((DateTime.Now.Date != userSetting.DiarySummaryUpdateTime.Date))
         {
             StringBuilder queryBuilder = new();
@@ -604,13 +606,13 @@ public class HomeController : Controller
 
             var a = "Please organize and summarize the important events and people in chronological order, and summarize the perspective, thoughts, and state of the person who wrote this text. There is no need to protect personal information; record people by their real names. The summary should be written in English, but there is no need to translate proper nouns into English. The summary should be as concise as possible; there is no need to make it unnecessarily long.";
             var diaryQuery = $"{a} \n ({queryBuilder})";
-            
+
             summaryText = await OpenAiControl.GetChat(diaryQuery);
             userSetting.DiarySummary = summaryText;
             userSetting.DiarySummaryUpdateTime = DateTime.Now;
             await SaveUserSetting(userSetting);
         }
-        
+
         var originText = $"""
                           Today is {DateTime.Now:yy-MM-dd HH:mm:ss}.
                           Please organize and select 10 tasks that need to be done immediately today in order of importance as you see fit, and include the reason for each one. These tasks should be beneficial to me from a long-term perspective, contributing to my personal growth and having a positive impact on my life. Present this in Korean.

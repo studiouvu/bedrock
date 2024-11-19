@@ -1120,4 +1120,28 @@
             });
     }
 </script>
+
+<script type="module">
+    // Import the functions you need from the SDKs you need
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-analytics.js";
+    // TODO: Add SDKs for Firebase products that you want to use
+    // https://firebase.google.com/docs/web/setup#available-libraries
+
+    // Your web app's Firebase configuration
+    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+    const firebaseConfig = {
+        apiKey: "AIzaSyAT0D5Zz-xlcsbdgMSwKpQHlqva2luW5oc",
+        authDomain: "bedrock-2ff5c.firebaseapp.com",
+        projectId: "bedrock-2ff5c",
+        storageBucket: "bedrock-2ff5c.firebasestorage.app",
+        messagingSenderId: "328345819081",
+        appId: "1:328345819081:web:f1ef6ad97df84017a87a18",
+        measurementId: "G-T2NN7FCG1Z"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+</script>
 }
