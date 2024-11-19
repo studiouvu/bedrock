@@ -19,21 +19,28 @@
                   margin-left: auto; 
                   margin-right: auto;
                   padding-left: 10px;">
-        <div style="height: 8px;">
-        </div>
         <img
             class="hide-on-small"
             src="~/images/AppIconTrans.png"
-            style="cursor: pointer; max-width: 22px; max-height:22px; margin-left: 4px; margin-bottom: 16px"/>
+            style="cursor: pointer; max-width: 22px; max-height:22px; margin-left: 4px; margin-top: 6px; margin-bottom: 16px"/>
+        <div id="project" class="display-on-small" style="color:#919191; margin-top: 8px; margin-left: 2px; margin-bottom: 4px; ">
+            <img class="twemoji" draggable="false" alt="⛺" src="/72x72/26fa.png">Project
+        </div>
+        <div
+            id="settings"
+            class="click-color unselectable display-on-small"
+            onclick="ReceiveSettings()"
+            style="width: 100%; margin-bottom: 5px; height: 32px; cursor: pointer; border-radius: 10px; padding: 4px 8px;">
+        </div>
         <div
             id="home-button"
-            class="click-color unselectable"
+            class="click-color unselectable hide-on-small"
             onclick="GetGPT()"
             style="width: 100%; margin-bottom: 5px; height: 32px; cursor: pointer; border-radius: 10px; padding: 4px 8px;">
         </div>
         <div
             id="journal-button"
-            class="click-color unselectable"
+            class="click-color unselectable hide-on-small"
             onclick="ReceiveDiary()"
             style="width: 100%; margin-bottom: 5px; height: 32px; cursor: pointer; border-radius: 10px; padding: 4px 8px;">
             @* 🎐🏮💼🥞 *@
@@ -147,7 +154,8 @@
 
     <div style="display: flex; overflow: hidden; height: 100%; max-width: 100%; ">
         <div class="hide-on-small display-on-medium" style="margin-left: 230px;"></div>
-        <div style="padding-top: 5px; width: 100%; margin-bottom: 200px; min-height: 600px; margin-left: 12px; margin-right: 12px;">
+        <div
+            style="padding-top: 5px; width: 100%; margin-bottom: 200px; min-height: 600px; margin-left: 12px; margin-right: 12px;">
             <div
                 style="width: 100%; margin-left: auto; margin-right: auto; max-width: 600px; border-radius: 10px;">
                 <div
@@ -197,7 +205,7 @@
                             class="click-color unselectable input-hide"
                             style="cursor: pointer; height: 100%; border-radius: 10px; padding: 4px;">
                             <div
-                                id = "task-count-hold"
+                                id="task-count-hold"
                                 class="text-center">
                                 <font color="#919191" style="display: flex;">
                                     ✔️
@@ -352,7 +360,8 @@
 
         $('#home-button').html(ToTwemoji("🌞Secretary"));
         $('#journal-button').html(ToTwemoji("🦐Journal"));
-        
+        $('#settings').html(ToTwemoji("⚙️Settings"));
+
         /*const myDivs = document.querySelectorAll('.click-animate');
 
         myDivs.forEach((div) => {
@@ -372,9 +381,9 @@
     function ShowMenu(show) {
         const width = window.innerWidth;
         const isMobile = width <= 900;
-        
+
         if (!isMobile)
-            return;        
+            return;
         {
             const elements = document.querySelectorAll('.main-menu');
             elements.forEach(element => {
@@ -425,7 +434,7 @@
             })
             .then(data => {
                 $('#tblContent').html(ToTwemoji(data.content));
-                
+
                 if (data.projectType == "Task") {
                     ShowTaskInput(true);
                 } else {
@@ -502,7 +511,7 @@
     }
 
     function ToTwemoji(data) {
-        return twemoji.parse(data , {
+        return twemoji.parse(data, {
             className: 'twemoji',
         });
         /*if (isMobile)
@@ -606,7 +615,7 @@
                 return response.text();
             })
             .then(data => {
-                $('#tblContent').append(data);
+                $('#tblContent').append(ToTwemoji(data));
                 GetTaskCount();
             })
             .catch(error => {
@@ -708,7 +717,7 @@
 
         const revisedData = ToTwemoji(finalStr);
         $('#project-name-header').html(revisedData);
-        
+
         SendProjectName(finalStr);
     }
 
@@ -827,7 +836,7 @@
 
                 result += e;
             });
-                
+
             $('#last-projects').html(result);
         })
             .catch(error => {
@@ -853,9 +862,9 @@
                 }
                 return response.json();
             }).then(data => {
-            
+
             var result = "";
-            
+
             data.content.forEach(element => {
                 const name = ToTwemoji(element.name);
 
@@ -867,7 +876,7 @@
 
                 result += e;
             });
-            
+
             $('#project-list').html(result);
         })
             .catch(error => {
@@ -902,7 +911,7 @@
 
     function ChangeProject(projectId, projectName) {
         ShowMenu(false);
-        
+
         $('#tblContent').html("<div class='fade-in' style='opacity: 0; min-height: 100px; border-radius: 15px; background-color: #1b1c1c'></div>");
         $('#project-name').html(ToTwemoji(projectName));
         $('#input-tab').html("");
@@ -1034,9 +1043,8 @@
                 return response.text();
             })
             .then(data => {
-                console.log(data);
                 $('#tblContent').html(data);
-                twemoji.parse(document.getElementById('tblContent'),{
+                twemoji.parse(document.getElementById('tblContent'), {
                     className: 'twemoji',
                 });
 
@@ -1048,6 +1056,75 @@
             });
     }
 
+    function ReceiveSettings() {
+        scrollToTop();
+        ShowTaskInput(false);
+        ShowMenu(false);
+
+        $('#tblContent').html("<div class='fade-in-long' style='opacity: 0; min-height: 300px; border-radius: 15px; background-color: #1b1c1c'></div>");
+        $('#project-name').html(ToTwemoji("⚙️Settings"));
+        $('#project-name-header').html(ToTwemoji("⚙️Settings"));
+        depth = 0;
+        document.title = "⚙️Settings - Bedrock";
+
+        $('#input-tab').html("");
+
+        fetch('@Url.Action("ReceiveSettings")', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json; charset=utf-8'
+            },
+            body: JSON.stringify({
+                deviceId: deviceId
+            })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('네트워크 응답에 문제가 있습니다.');
+                }
+                return response.text();
+            })
+            .then(data => {
+                $('#tblContent').html(data);
+                twemoji.parse(document.getElementById('tblContent'), {
+                    className: 'twemoji',
+                });
+                GetLastProjects();
+                GetProjectList();
+            })
+            .catch(error => {
+                $('#last-projects').html("fail");
+            });
+    }
+
+    function ReceiveDeleteAccount() {
+        scrollToTop();
+
+        fetch('@Url.Action("ReceiveDeleteAccount")', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json; charset=utf-8'
+            },
+            body: JSON.stringify({
+                deviceId: deviceId
+            })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('네트워크 응답에 문제가 있습니다.');
+                }
+                return response.text();
+            })
+            .then(data => {
+                PageReload();
+            })
+            .catch(error => {
+                $('#last-projects').html("fail");
+            });
+    }
+    
     function PageReload() {
         location.reload(true);
     }
@@ -1121,10 +1198,10 @@
     }
 </script>
 
-<script type="module">
+    <script type="module">
     // Import the functions you need from the SDKs you need
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-analytics.js";
+    import {initializeApp} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+    import {getAnalytics} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-analytics.js";
     // TODO: Add SDKs for Firebase products that you want to use
     // https://firebase.google.com/docs/web/setup#available-libraries
 

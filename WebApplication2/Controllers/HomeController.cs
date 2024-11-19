@@ -742,6 +742,32 @@ public class HomeController : Controller
     }
 
     [HttpPost]
+    public async Task<bool> ReceiveDeleteAccount([FromBody] DataModel model)
+    {
+        var deviceId = model.DeviceId;
+        var userId = await GetUserId(deviceId);
+        var emailId = await GetEmailUser(userId);
+
+        if (emailId == null)
+            return false;
+
+        await AwsKey.Context.DeleteAsync(emailId);
+        
+        var deviceIdUser = await AwsKey.Context.LoadAsync<BedrockDeviceId>("0", deviceId);
+        await AwsKey.Context.DeleteAsync(deviceIdUser);
+
+        LocalDB.UserIdDictionary.Remove(deviceId);
+        
+        return true;
+    }
+
+    [HttpPost]
+    public async Task<ActionResult> ReceiveSettings([FromBody] DataModel model)
+    {
+        return View("Element/Settings");
+    }
+
+    [HttpPost]
     public async Task<string> ReceiveEmailId([FromBody] DataModel model)
     {
         var emailId = model.Data;
@@ -963,6 +989,14 @@ public class HomeController : Controller
 
     public async Task<string> GetEmailId(string userId)
     {
+        var emailUser = await GetEmailUser(userId);
+        if (emailUser == null)
+            return string.Empty;
+        return emailUser.Id;
+    }
+
+    public async Task<BedrockEmailId> GetEmailUser(string userId)
+    {
         var conditions = new List<ScanCondition>
         {
             new("UserId", ScanOperator.Equal, userId)
@@ -970,11 +1004,7 @@ public class HomeController : Controller
 
         var emailIds = await AwsKey.Context.ScanAsync<BedrockEmailId>(conditions).GetRemainingAsync();
 
-        if (emailIds.Count == 0)
-            return string.Empty;
-
-        var emailId = emailIds.First();
-        return emailId.Id;
+        return emailIds.Count == 0 ? null : emailIds.First();
     }
 
     public async Task<bool> SendMail(string email)
