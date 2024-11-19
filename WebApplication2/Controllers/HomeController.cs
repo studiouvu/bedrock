@@ -571,6 +571,7 @@ public class HomeController : Controller
 
             foreach (var content in contents
                          .Where(content => !content.IsTemplate)
+                         .Where(content => content.Done == false)
                          .OrderBy(content => content.Tick))
             {
                 var dateTime = DateTime.MinValue.AddTicks(content.Tick);
@@ -580,7 +581,7 @@ public class HomeController : Controller
                 var doneDateTime = DateTime.MinValue.AddTicks(content.DoneTick);
                 var fixedDoneDateTime = doneDateTime.Add(timeSpan);
 
-                var t = $"(Done: {content.Done} , CreateTime: {fixedDateTime:yy-MM-dd} , DoneTime: {fixedDoneDateTime:yy-MM-dd} , Content: {content.Text}), Depth: {content.depth}),";
+                var t = $"CreateTime: {fixedDateTime:yy-MM-dd} , DoneTime: {fixedDoneDateTime:yy-MM-dd} , Content: {content.Text}), Depth: {content.depth}),";
                 builder.Append(t);
             }
 
