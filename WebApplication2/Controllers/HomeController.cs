@@ -1291,8 +1291,6 @@ public class HomeController : Controller
 
             var userSetting = await GetUserSetting(newUserId);
             userSetting.CurrentProject = firstProject;
-            userSetting.ShowDoneTask = true;
-            
             await SaveUserSetting(userSetting);
 
             return newUserId;
