@@ -507,7 +507,26 @@ public class HomeController : Controller
         var timeSpan = DateTime.Now - DateTime.UtcNow;
         var fixedDateTime = dateTime.Add(timeSpan);
 
-        return $"<br>{secretary.Content}<br><br><font color=\"#919191\">업데이트 된 시간 : {fixedDateTime:yy.MM.dd HH:mm}</font>";
+        return $"<font color=\"#919191\">1시간마다 자동으로 업데이트됩니다.</font><br><br>{secretary.Content}<br><br><font color=\"#919191\">업데이트 된 시간 : {fixedDateTime:yy.MM.dd HH:mm}</font><br>";
+    }
+
+    [HttpPost]
+    public async Task<bool> ReceiveGoToTask([FromBody] DataModel model)
+    {
+        var deviceId = model.DeviceId;
+        var userId = await GetUserId(deviceId);
+        var userSetting = await GetUserSetting(userId);
+        var currentProject = await GetProject(userSetting.CurrentProject);
+
+        if (currentProject != null)
+            return false;
+        
+        var projects = await ReceiveProjects(userId);
+        var targetProject = projects.OrderByDescending(project => project.LastOpenTick).FirstOrDefault()?.Id;
+        if (targetProject != null)
+            userSetting.CurrentProject = targetProject;
+        
+        return true;
     }
 
     private async Task<bool> UpdateGptContent(string userId)
@@ -752,12 +771,12 @@ public class HomeController : Controller
             return false;
 
         await AwsKey.Context.DeleteAsync(emailId);
-        
+
         var deviceIdUser = await AwsKey.Context.LoadAsync<BedrockDeviceId>("0", deviceId);
         await AwsKey.Context.DeleteAsync(deviceIdUser);
 
         LocalDB.UserIdDictionary.Remove(deviceId);
-        
+
         return true;
     }
 
@@ -1293,6 +1312,8 @@ public class HomeController : Controller
 
             var userSetting = await GetUserSetting(newUserId);
             userSetting.CurrentProject = firstProject;
+            userSetting.ShowDoneTask = true;
+            
             await SaveUserSetting(userSetting);
 
             return newUserId;
