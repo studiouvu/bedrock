@@ -1137,39 +1137,18 @@ public class HomeController : Controller
 
     public async Task<string> FirstSetting(string userId)
     {
-        var thirdProject = await CreateProject(userId, ProjectType.Task, "Bedrock 아이디어");
-
-        await WriteContent(userId, thirdProject.Id, "device id 쿠키로 구현", isTemplate: true);
-        await WriteContent(userId, thirdProject.Id, "uuid 4 사용하기", 1, isTemplate: true);
-        await WriteContent(userId, thirdProject.Id, "로그인 구현하기", isTemplate: true);
-        await WriteContent(userId, thirdProject.Id, "이메일로 인증하게", 1, isTemplate: true);
-        await WriteContent(userId, thirdProject.Id, "이메일 발송 구현하기", 2, isTemplate: true);
-        await WriteContent(userId, thirdProject.Id, "템플릿 프로젝트", isTemplate: true);
-        await WriteContent(userId, thirdProject.Id, "사고 싶은 것", 1, isTemplate: true);
-        await WriteContent(userId, thirdProject.Id, "맥미니 넣자", 2, isTemplate: true);
-        await WriteContent(userId, thirdProject.Id, "Bedrock 아이디어", 1, isTemplate: true);
-        await WriteContent(userId, thirdProject.Id, "Parent Content 구현하기", isTemplate: true);
-        await WriteContent(userId, thirdProject.Id, "fetch로 각 content 수정할때 해당 부분만 변경되게", isTemplate: true);
-        await WriteContent(userId, thirdProject.Id, "체크처리 할때도 개별로 변경되게", isTemplate: true);
-        await WriteContent(userId, thirdProject.Id, "asp net Response Compression 적용하기", isTemplate: true);
-        await WriteContent(userId, thirdProject.Id, "프로젝트 폴더 구현하기", isTemplate: true);
-        await WriteContent(userId, thirdProject.Id, "프로젝트 내 프로젝트 구현?", 1, isTemplate: true);
-        await WriteContent(userId, thirdProject.Id, "폴더처럼 작동해도 될 듯", 1, isTemplate: true);
-        await WriteContent(userId, thirdProject.Id, "콘텐츠 수정 기능 구현하기", isTemplate: true);
-        await WriteContent(userId, thirdProject.Id, "클릭하면 input box로 변경되게", 1, isTemplate: true);
-
         var secondProject = await CreateProject(userId, ProjectType.Task, "사고 싶은 것");
 
         await WriteContent(userId, secondProject.Id, "에어팟 맥스", isTemplate: true);
         await WriteContent(userId, secondProject.Id, "맥미니 m4", isTemplate: true);
         await WriteContent(userId, secondProject.Id, "삼성 건조기", isTemplate: true);
-        await WriteContent(userId, secondProject.Id, "로지텍 키보드 mx keys", isTemplate: true);
 
         //todo! 지역별로 설정 필요
         var firstProject = await CreateProject(userId, ProjectType.Task, $"🦊{DateTime.Now:yy.MM.dd}");
 
         await WriteContent(userId, firstProject.Id, "안녕하세요🥳 새로 오신 것을 환영합니다!", isTemplate: true);
-        await WriteContent(userId, firstProject.Id, "Bedrock은 가장 강력한 Todo 앱입니다.  \n자세한 건 아래 소개글을 읽어주세요", isTemplate: true);
+        await WriteContent(userId, firstProject.Id, "자유롭게 할 일을 추가해 보세요!", isTemplate: true);
+        // await WriteContent(userId, firstProject.Id, "Bedrock은 가장 강력한 Todo 앱입니다.  \n자세한 건 아래 소개글을 읽어주세요", isTemplate: true);
         // await WriteContent(firstProject.Id, "Bedrock은 가장 강력한 Todo 앱입니다.  \n- **종단 간 암호화**로 완전한 보안  \n*(당신 외에 누구도 이 글을 읽을 수 없습니다)*  \n- **MarkDown** 문법 지원  \n- **완전한 동기화** *웹 , 안드로이드 , 아이폰 어디서든 사용하세요*  \n- **오픈 소스** *(우리는 절대로 죽지 않습니다!)*  \n  \n자세한 건 이 [소개 글](https://bedrock.es/home/about)을 읽어주세요");
 
         return firstProject.Id;
