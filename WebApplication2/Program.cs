@@ -4,6 +4,7 @@ using Amazon.DynamoDBv2.DataModel;
 using Amazon.Runtime;
 using Bedrock;
 using Bedrock.Controllers;
+using Bedrock.Manage;
 using Microsoft.AspNetCore.ResponseCompression;
 using OpenAI.Chat;
 var builder = WebApplication.CreateBuilder(args);
@@ -32,9 +33,9 @@ builder.Services.AddSession(options =>
 
 OpenAiControl.Initialize();
 
-var credentials = new BasicAWSCredentials(AwsKey.accessKey, AwsKey.secretKey);
-AwsKey.Client = new AmazonDynamoDBClient(credentials, RegionEndpoint.APNortheast1);
-AwsKey.Context = new DynamoDBContext(AwsKey.Client);
+var credentials = new BasicAWSCredentials(AwsManager.accessKey, AwsManager.secretKey);
+AwsManager.Client = new AmazonDynamoDBClient(credentials, RegionEndpoint.APNortheast1);
+AwsManager.DbContext = new DynamoDBContext(AwsManager.Client);
 
 var app = builder.Build();
 

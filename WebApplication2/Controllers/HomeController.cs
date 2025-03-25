@@ -8,6 +8,7 @@ using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.DocumentModel;
 using Amazon.Runtime;
+using Bedrock.Manage;
 using Bedrock.Models;
 using GEmojiSharp;
 using Markdig;
@@ -194,7 +195,7 @@ public class HomeController : Controller
         if (projectId == "-")
             return false;
 
-        var diaryContent = await AwsKey.Context.LoadAsync<BedrockDiaryContent>("0", projectId);
+        var diaryContent = await AwsManager.DbContext.LoadAsync<BedrockDiaryContent>("0", projectId);
 
         var content = model.Data;
 
@@ -204,7 +205,7 @@ public class HomeController : Controller
         diaryContent.Content = content;
         diaryContent.LastTick = DateTime.UtcNow.Ticks;
 
-        await AwsKey.Context.SaveAsync(diaryContent);
+        await AwsManager.DbContext.SaveAsync(diaryContent);
 
         var queryText =
             $"Please summarize it as briefly as possible, and use real names for the individuals.\n" +
@@ -215,7 +216,7 @@ public class HomeController : Controller
 
         diaryContent.Summary = gptText;
 
-        await AwsKey.Context.SaveAsync(diaryContent);
+        await AwsManager.DbContext.SaveAsync(diaryContent);
 
         return true;
     }
@@ -331,7 +332,7 @@ public class HomeController : Controller
     {
         var id = model.Data;
 
-        var content = await AwsKey.Context.LoadAsync<BedrockContent>("0", id);
+        var content = await AwsManager.DbContext.LoadAsync<BedrockContent>("0", id);
 
         if (content == null)
             return false;
@@ -339,7 +340,7 @@ public class HomeController : Controller
         content.Done = !content.Done;
         content.DoneTick = DateTime.UtcNow.Ticks;
 
-        await AwsKey.Context.SaveAsync(content);
+        await AwsManager.DbContext.SaveAsync(content);
 
         return true;
     }
@@ -385,7 +386,7 @@ public class HomeController : Controller
             Filter = filter,
         };
 
-        var contents = await AwsKey.Context.FromQueryAsync<BedrockContent>(query).GetRemainingAsync();
+        var contents = await AwsManager.DbContext.FromQueryAsync<BedrockContent>(query).GetRemainingAsync();
 
         if (contents.Count == 0)
         {
@@ -433,7 +434,7 @@ public class HomeController : Controller
 
     private async Task<JsonResult> GetDiaryProjectHtml(string userId, string projectId, BedrockUserSetting userSetting)
     {
-        var diaryContent = await AwsKey.Context.LoadAsync<BedrockDiaryContent>("0", projectId);
+        var diaryContent = await AwsManager.DbContext.LoadAsync<BedrockDiaryContent>("0", projectId);
 
         if (diaryContent == null)
         {
@@ -446,7 +447,7 @@ public class HomeController : Controller
                 LastTick = DateTime.UtcNow.Ticks,
             };
 
-            await AwsKey.Context.SaveAsync(diaryContent);
+            await AwsManager.DbContext.SaveAsync(diaryContent);
         }
 
         // var contentText = Markdown.ToHtml(diaryContent.Content).Replace("<p>", "").Replace("</p>", "");
@@ -501,7 +502,7 @@ public class HomeController : Controller
             Data = "-",
         });
 
-        var secretary = await AwsKey.Context.LoadAsync<BedrockSecretary>("0", userId);
+        var secretary = await AwsManager.DbContext.LoadAsync<BedrockSecretary>("0", userId);
 
         var dateTime = DateTime.MinValue.AddTicks(secretary.lastUpdateTick);
         var timeSpan = DateTime.Now - DateTime.UtcNow;
@@ -538,7 +539,7 @@ public class HomeController : Controller
         if (!isLogin)
             return false;
 
-        var secretary = await AwsKey.Context.LoadAsync<BedrockSecretary>("0", userId);
+        var secretary = await AwsManager.DbContext.LoadAsync<BedrockSecretary>("0", userId);
 
         if (secretary != null)
         {
@@ -564,7 +565,7 @@ public class HomeController : Controller
             secretary.Content = "업데이트 중입니다, 잠시만 기다려주세요<br>" + secretary.Content;
         }
 
-        await AwsKey.Context.SaveAsync(secretary);
+        await AwsManager.DbContext.SaveAsync(secretary);
 
         var projectList = await ReceiveProjects(userId);
         var projects = projectList.OrderByDescending(p => p.LastOpenTick);
@@ -576,7 +577,7 @@ public class HomeController : Controller
             new("UserId", ScanOperator.Equal, userId),
         };
 
-        var userContents = await AwsKey.Context.ScanAsync<BedrockContent>(conditions).GetRemainingAsync();
+        var userContents = await AwsManager.DbContext.ScanAsync<BedrockContent>(conditions).GetRemainingAsync();
 
         foreach (var project in projects.Where(project => project.ProjectType == ProjectType.Task))
         {
@@ -618,7 +619,7 @@ public class HomeController : Controller
 
             foreach (var project in projects.Where(project => project.ProjectType == ProjectType.Diary))
             {
-                var diaryContent = await AwsKey.Context.LoadAsync<BedrockDiaryContent>("0", project.Id);
+                var diaryContent = await AwsManager.DbContext.LoadAsync<BedrockDiaryContent>("0", project.Id);
                 if (diaryContent == null)
                     continue;
                 queryBuilder.Append($"(Diary Name: {project.Name}, Content: {diaryContent.Summary}),");
@@ -728,7 +729,7 @@ public class HomeController : Controller
             Content = contentText,
         };
 
-        await AwsKey.Context.SaveAsync(bedrockSecretary);
+        await AwsManager.DbContext.SaveAsync(bedrockSecretary);
 
         return true;
     }
@@ -770,10 +771,10 @@ public class HomeController : Controller
         if (emailId == null)
             return false;
 
-        await AwsKey.Context.DeleteAsync(emailId);
+        await AwsManager.DbContext.DeleteAsync(emailId);
 
-        var deviceIdUser = await AwsKey.Context.LoadAsync<BedrockDeviceId>("0", deviceId);
-        await AwsKey.Context.DeleteAsync(deviceIdUser);
+        var deviceIdUser = await AwsManager.DbContext.LoadAsync<BedrockDeviceId>("0", deviceId);
+        await AwsManager.DbContext.DeleteAsync(deviceIdUser);
 
         LocalDB.UserIdDictionary.Remove(deviceId);
 
@@ -848,7 +849,7 @@ public class HomeController : Controller
                 Partition = "0",
             };
 
-            await AwsKey.Context.SaveAsync(value);
+            await AwsManager.DbContext.SaveAsync(value);
         }
         else
         {
@@ -861,7 +862,7 @@ public class HomeController : Controller
 
             LocalDB.UserIdDictionary[deviceId] = userId;
 
-            await AwsKey.Context.SaveAsync(value);
+            await AwsManager.DbContext.SaveAsync(value);
         }
 
         return true;
@@ -884,7 +885,7 @@ public class HomeController : Controller
 
         userSetting.CurrentProject = projects.OrderByDescending(p => p.LastOpenTick).FirstOrDefault()?.Id ?? "0";
 
-        await AwsKey.Context.SaveAsync(userSetting);
+        await AwsManager.DbContext.SaveAsync(userSetting);
 
         return true;
     }
@@ -899,7 +900,7 @@ public class HomeController : Controller
 
         userSetting.ShowDate = !userSetting.ShowDate;
 
-        await AwsKey.Context.SaveAsync(userSetting);
+        await AwsManager.DbContext.SaveAsync(userSetting);
 
         return true;
     }
@@ -913,7 +914,7 @@ public class HomeController : Controller
 
         userSetting.ShowDoneTask = !userSetting.ShowDoneTask;
 
-        await AwsKey.Context.SaveAsync(userSetting);
+        await AwsManager.DbContext.SaveAsync(userSetting);
 
         return true;
     }
@@ -931,7 +932,7 @@ public class HomeController : Controller
             new("Project", ScanOperator.Equal, project),
         };
 
-        var contents = await AwsKey.Context.ScanAsync<BedrockContent>(conditions).GetRemainingAsync();
+        var contents = await AwsManager.DbContext.ScanAsync<BedrockContent>(conditions).GetRemainingAsync();
 
         var count = contents.Count;
         var doneCount = contents.Count(content => content.Done);
@@ -948,7 +949,7 @@ public class HomeController : Controller
             new("IsArchive", ScanOperator.NotEqual, true),
         };
 
-        var bedrockProjects = await AwsKey.Context.ScanAsync<BedrockProject>(conditions).GetRemainingAsync();
+        var bedrockProjects = await AwsManager.DbContext.ScanAsync<BedrockProject>(conditions).GetRemainingAsync();
 
         return bedrockProjects.ToList();
     }
@@ -974,7 +975,7 @@ public class HomeController : Controller
             ProjectType = projectType,
         };
 
-        await AwsKey.Context.SaveAsync(project);
+        await AwsManager.DbContext.SaveAsync(project);
 
         return project;
     }
@@ -983,13 +984,13 @@ public class HomeController : Controller
     {
         if (string.IsNullOrEmpty(projectId))
             return null;
-        var project = await AwsKey.Context.LoadAsync<BedrockProject>("0", projectId);
+        var project = await AwsManager.DbContext.LoadAsync<BedrockProject>("0", projectId);
         return project;
     }
 
     public async Task<bool> SaveProject(BedrockProject project)
     {
-        await AwsKey.Context.SaveAsync(project);
+        await AwsManager.DbContext.SaveAsync(project);
         return true;
     }
 
@@ -1021,7 +1022,7 @@ public class HomeController : Controller
             new("UserId", ScanOperator.Equal, userId)
         };
 
-        var emailIds = await AwsKey.Context.ScanAsync<BedrockEmailId>(conditions).GetRemainingAsync();
+        var emailIds = await AwsManager.DbContext.ScanAsync<BedrockEmailId>(conditions).GetRemainingAsync();
 
         return emailIds.Count == 0 ? null : emailIds.First();
     }
@@ -1052,7 +1053,7 @@ public class HomeController : Controller
 
         await client.SendMailAsync(message);
 
-        var credentials = new BasicAWSCredentials(AwsKey.accessKey, AwsKey.secretKey);
+        var credentials = new BasicAWSCredentials(AwsManager.accessKey, AwsManager.secretKey);
         var awsClient = new AmazonDynamoDBClient(credentials, RegionEndpoint.APNortheast1);
 
         var context = new DynamoDBContext(awsClient);
@@ -1094,7 +1095,7 @@ public class HomeController : Controller
             new("Email", ScanOperator.Equal, email)
         };
 
-        var allDocs = await AwsKey.Context.ScanAsync<EmailCode>(conditions).GetRemainingAsync();
+        var allDocs = await AwsManager.DbContext.ScanAsync<EmailCode>(conditions).GetRemainingAsync();
 
         if (allDocs.Count == 0)
             return false;
@@ -1109,7 +1110,7 @@ public class HomeController : Controller
         if (LocalDB.UserSettingDictionary.TryGetValue(userId, out var setting))
             return setting;
 
-        var userSetting = await AwsKey.Context.LoadAsync<BedrockUserSetting>("0", userId);
+        var userSetting = await AwsManager.DbContext.LoadAsync<BedrockUserSetting>("0", userId);
 
         if (userSetting == null)
         {
@@ -1121,7 +1122,7 @@ public class HomeController : Controller
                 CurrentProject = "project-0"
             };
 
-            await AwsKey.Context.SaveAsync(userSetting);
+            await AwsManager.DbContext.SaveAsync(userSetting);
         }
 
         LocalDB.UserSettingDictionary.TryAdd(userId, userSetting);
@@ -1131,7 +1132,7 @@ public class HomeController : Controller
 
     private async Task<bool> SaveUserSetting(BedrockUserSetting userSetting)
     {
-        await AwsKey.Context.SaveAsync(userSetting);
+        await AwsManager.DbContext.SaveAsync(userSetting);
         return true;
     }
 
@@ -1171,7 +1172,7 @@ public class HomeController : Controller
             IsTemplate = isTemplate,
         };
 
-        await AwsKey.Context.SaveAsync(value);
+        await AwsManager.DbContext.SaveAsync(value);
 
         return value;
     }
@@ -1257,7 +1258,7 @@ public class HomeController : Controller
             new("Id", ScanOperator.Equal, id)
         };
 
-        var deviceIds = await AwsKey.Context.ScanAsync<BedrockDeviceId>(conditions).GetRemainingAsync();
+        var deviceIds = await AwsManager.DbContext.ScanAsync<BedrockDeviceId>(conditions).GetRemainingAsync();
 
         return deviceIds.Count != 0;
     }
@@ -1272,7 +1273,7 @@ public class HomeController : Controller
             new("Id", ScanOperator.Equal, id)
         };
 
-        var allDocs = await AwsKey.Context.ScanAsync<BedrockDeviceId>(conditions).GetRemainingAsync();
+        var allDocs = await AwsManager.DbContext.ScanAsync<BedrockDeviceId>(conditions).GetRemainingAsync();
 
         if (allDocs.Count == 0)
         {
@@ -1285,7 +1286,7 @@ public class HomeController : Controller
                 Partition = "0"
             };
 
-            await AwsKey.Context.SaveAsync(deviceId);
+            await AwsManager.DbContext.SaveAsync(deviceId);
 
             var firstProject = await FirstSetting(newUserId);
 
@@ -1312,7 +1313,7 @@ public class HomeController : Controller
             new("Id", ScanOperator.Equal, id)
         };
 
-        var allDocs = await AwsKey.Context.ScanAsync<BedrockEmailId>(conditions).GetRemainingAsync();
+        var allDocs = await AwsManager.DbContext.ScanAsync<BedrockEmailId>(conditions).GetRemainingAsync();
 
         if (allDocs.Count == 0)
         {
