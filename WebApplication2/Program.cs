@@ -32,6 +32,7 @@ builder.Services.AddSession(options =>
 });
 
 OpenAiControl.Initialize();
+AwsManager.Initialize();
 
 var credentials = new BasicAWSCredentials(AwsManager.accessKey, AwsManager.secretKey);
 AwsManager.Client = new AmazonDynamoDBClient(credentials, RegionEndpoint.APNortheast1);
