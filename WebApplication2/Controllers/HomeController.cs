@@ -1045,8 +1045,8 @@ public class HomeController : Controller
         message.IsBodyHtml = true;
 
         var client = new SmtpClient("smtp.gmail.com", 587); //Gmail smtp    
-        var basicCredential1 = new System.Net.NetworkCredential("app@studiouvu.com", "uwzt qfez aquv qwhm");
-
+        var basicCredential1 = new System.Net.NetworkCredential("app@studiouvu.com", Environment.GetEnvironmentVariable("GOOGLE_SMTP_PASSWORD"));
+        
         client.EnableSsl = true;
         client.UseDefaultCredentials = false;
         client.Credentials = basicCredential1;
