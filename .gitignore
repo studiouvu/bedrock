@@ -114,4 +114,3 @@ src/.vs/config/applicationhost.config
 # JetBrains Rider's auto generated files
 .idea/
 node_modules
-WebApplication2/Properties/launchSettings.json
